@@ -6,11 +6,7 @@ using System.Threading.Tasks;
 
 namespace DeepWerewolf
 {
-    class Program
+    class GameMap
     {
-        static void Main(string[] args)
-        {
-
-        }
     }
 }
