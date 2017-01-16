@@ -10,6 +10,7 @@ namespace DeepWerewolf
     {
         static void Main(string[] args)
         {
+
         }
     }
 }
