@@ -17,12 +17,14 @@ namespace DeepWerewolf
         public int serverPort { get; private set; }
         public string name { get; private set; }
         public GameMap currentMap { get; private set; }
+        public string espece { get; private set; }
 
         //Eléments nécessaires à la communication avec le serveur
         public TcpClient connectionSocket = new TcpClient();
         public NetworkStream NS;
         public BinaryReader BR;
         public BinaryWriter BW;
+        
 
 
 
@@ -33,6 +35,7 @@ namespace DeepWerewolf
             name = settings[0];
             serverIP = IPAddress.Parse(settings[1]);
             serverPort = int.Parse(settings[2]);
+            espece = "";
             
             
             
@@ -55,6 +58,12 @@ namespace DeepWerewolf
             receive_frame();
 
             //On recoit la frame HUM
+            receive_frame();
+
+            //On recoit la frame HME
+            receive_frame();
+
+            //On reçoit la frame MAP
             receive_frame();
 
             //Console.WriteLine(this.currentMap.size_x);
@@ -92,7 +101,8 @@ namespace DeepWerewolf
                 case "SET":
                     {
                         //On lit un byte qui correspond au nombre de lignes
-                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 }; //On a besoin d'un tableau d'au moins 2 octets pour récupérer un int
+                                                                                //c'est pour ça que je complète avec un byte nul
                         int rows = BitConverter.ToInt16(buffer, 0);
 
                         //On lit un autre octet qui correspond au nombre de colonnes
@@ -115,11 +125,11 @@ namespace DeepWerewolf
                         //On lit ensuite autant de paires d'octets que de maisons pour connaitre les coordonnees des maisons
                         for (int i=0; i<numberofHouses; i++)
                         {
-                            //Coordonnée X
+                            //abscisse
                             buffer = new byte[2] { BR.ReadByte(), (byte)0 };
                             int X = BitConverter.ToInt16(buffer, 0);
 
-                            //Coordonnée Y
+                            //ordonnee
                             buffer = new byte[2] { BR.ReadByte(), (byte)0 };
                             int Y = BitConverter.ToInt16(buffer, 0);
 
@@ -131,6 +141,179 @@ namespace DeepWerewolf
                         }
                         break;
                     }
+
+                case "HME":
+                    {
+                        //On lit l'abscisse de départ de notre espèce
+                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int abs = BitConverter.ToInt16(buffer, 0);
+
+                        //On lit l'ordonnée de départ de notre espèce
+                        buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int ord = BitConverter.ToInt16(buffer, 0);
+
+                        //On crée la case correspondante sur notre map et on la définit comme case de départ
+                        Humans h = new Humans(0);
+                        Monsters ourTeam = new Monsters(1, false);
+                        currentMap.setTile(abs, ord, h, ourTeam);
+                        currentMap.setStartTile(abs, ord);
+
+                        Console.WriteLine("Notre case de départ : ({0},{1})", abs, ord);
+                        break;
+                    }
+
+                case "MAP":
+                    
+                case "UPD":
+                    {
+                        //On lit le nombre de changements
+                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int changes = BitConverter.ToInt16(buffer, 0);
+
+                        //Pour chaque changement, on va lire les coordonnées de la case, ainsi que le nombre d'individus de chaque espèce
+                        for (int i=0; i<changes; i++)
+                        {
+                            //abscisse
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int X = BitConverter.ToInt16(buffer, 0);
+
+                            //ordonnee
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int Y = BitConverter.ToInt16(buffer, 0);
+
+                            //nombre d'humains
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int human_number = BitConverter.ToInt16(buffer, 0);
+
+                            //nombre de vampires
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int vampires = BitConverter.ToInt16(buffer, 0);
+
+                            //nombre de loups-garous
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int werewolves = BitConverter.ToInt16(buffer, 0);
+
+                            int monsters = vampires == 0 ? werewolves : vampires; //Le nombre de monstres
+
+                            Humans h = new Humans(human_number);
+                            
+
+                            if (order == "MAP")
+                            {
+                                //Cela veut dire que c'est la première fois qu'on reçoit cette commande, 
+                                //il faut donc qu'on sache si on est vampire ou loup garou
+
+                                //Si la case qu'on est en train de modifier est notre case de départ,
+                                //on sait donc que nous serons les monstres dont le nombre n'est pas nul
+                                if (human_number == 0)
+                                {
+                                    Monsters m = new Monsters(0, false);
+
+                                    //Pour gérer l'affichage
+                                    bool print_espece = espece == "";
+
+
+                                    if (X == currentMap.startTile.coord_x && Y == currentMap.startTile.coord_y)
+                                    {
+                                        espece = vampires == monsters ? "vampire" : "werewolf";
+                                        m = new Monsters(monsters, false);
+
+                                        if (print_espece)
+                                        {
+                                            Console.WriteLine("Nous sommes les {0}s", espece);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        espece = vampires != monsters ? "vampire" : "werewolf";
+                                        m = new Monsters(monsters, true);
+
+                                        if (print_espece)
+                                        {
+                                            Console.WriteLine("Nous sommes les {0}s", espece);
+                                        }
+
+                                    }
+
+                                    currentMap.setTile(X, Y, h, m);
+
+                                    if (m.isEnemy)
+                                    {
+                                        Console.WriteLine("({0},{1}) : {2} individus de l'espèce adverse", X, Y, monsters);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
+                                    }
+                                        
+                                    
+                                    
+                                }
+                                else
+                                {
+                                    //On sait donc ici que c'est une case d'humains, donc monsters = 0
+                                    Monsters m = new Monsters(monsters, false);
+
+                                    currentMap.setTile(X, Y, h, m);
+                                    Console.WriteLine("({0},{1}) : {2} individus humains", X, Y, human_number);
+                                }
+                            }
+                            else
+                            {
+                                //order vaut "UPD", on connait donc notre espèce
+                                Monsters m = new Monsters(0, false);
+                                if (espece == "vampire")
+                                {
+                                    if (monsters == vampires)
+                                    {
+                                        //Nous sommes les vampires, et le nombre de vampires n'est pas nul, donc nous devons créer 
+                                        //un objet monsters avec enemy qui vaut false
+                                        m = new Monsters(monsters, false);
+                                    }
+                                    else
+                                    {
+                                        m = new Monsters(monsters, true);
+                                    }
+                                }
+
+                                else
+                                {
+                                    if (monsters == vampires)
+                                    {
+                                        //Nous sommes les loups-garous, et le nombre de vampires n'est pas nul, donc nous devons créer 
+                                        //un objet monsters avec enemy qui vaut true
+                                        m = new Monsters(monsters, true);
+                                    }
+                                    else
+                                    {
+                                        m = new Monsters(monsters, false);
+                                    }
+                                }
+
+                                //on update notre map
+                                currentMap.setTile(X, Y, h, m);
+
+                                if (m.isEnemy)
+                                {
+                                    Console.WriteLine("({0},{1}) : {2} individus de l'espèce adverse", X, Y, monsters);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
+                                }
+                            }
+                        }
+                        break;
+                    }
+
+                case "END":
+                    break;
+
+                case "BYE":
+                    break;
+
+                default:
+                    break;
 
             }
 
