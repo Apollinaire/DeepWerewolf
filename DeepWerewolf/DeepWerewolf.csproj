@@ -43,8 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameMap.cs" />
+    <Compile Include="Humans.cs" />
+    <Compile Include="Monsters.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
