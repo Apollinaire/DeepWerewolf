@@ -18,6 +18,7 @@ namespace DeepWerewolf
         public string name { get; private set; }
         public GameMap currentMap { get; private set; }
         public string espece { get; private set; }
+        public bool isPlaying { get; set; }
 
         //Eléments nécessaires à la communication avec le serveur
         public TcpClient connectionSocket = new TcpClient();
@@ -32,10 +33,11 @@ namespace DeepWerewolf
         {
             //On récupère les paramètres dans le fichier de configuration
             List<string> settings = File.ReadLines(pathToConfigFile).ToList();
-            name = settings[0];
+            name = settings[0] + DateTime.Now.Millisecond.ToString();
             serverIP = IPAddress.Parse(settings[1]);
             serverPort = int.Parse(settings[2]);
             espece = "";
+            isPlaying = false;
             
             
             
@@ -51,8 +53,9 @@ namespace DeepWerewolf
             this.NS = connectionSocket.GetStream();
             this.BR = new BinaryReader(this.NS);
             this.BW = new BinaryWriter(this.NS);
+            isPlaying = true;
 
-            sendName();
+            send_NME_frame();
 
             //On recoit la frame SET
             receive_frame();
@@ -72,11 +75,11 @@ namespace DeepWerewolf
 
         }
 
-        public void sendName()
+        public void send_NME_frame()
         {
             byte[] cmd = Encoding.ASCII.GetBytes("NME");
             byte[] name_bytes = Encoding.ASCII.GetBytes(this.name);
-            byte[] t = { (byte)name_bytes.Length };
+            byte t =  (byte)name_bytes.Length ;
 
             //On envoie la trame NME au serveur
             BW.Write(cmd);
@@ -301,15 +304,21 @@ namespace DeepWerewolf
                                 {
                                     Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
                                 }
+
+                                
                             }
                         }
+
+                        Console.WriteLine("Il y a eu {0} changements. A nous de jouer", changes);
                         break;
                     }
 
                 case "END":
+                    isPlaying = false;
                     break;
 
                 case "BYE":
+                    isPlaying = false;
                     break;
 
                 default:
@@ -319,7 +328,34 @@ namespace DeepWerewolf
 
         }
 
-        
+        public void send_MOV_frame(int move_number, List<int[]> movements)
+        {
+            byte[] cmd = Encoding.ASCII.GetBytes("MOV");
+            byte n = (byte)movements.Count;
+
+            //On envoie "MOV" suivi du nombre de mouvements
+            BW.Write(cmd);
+            BW.Write(n);
+
+            //On envoie ensuite chaque mouvement
+            foreach (int[] move in movements)
+            {
+                byte X_start = (byte)move[0];
+                byte Y_start = (byte)move[1];
+                byte people = (byte)move[2];
+                byte X_end = (byte)move[3];
+                byte Y_end = (byte)move[4];
+
+                BW.Write(X_start);
+                BW.Write(Y_start);
+                BW.Write(people);
+                BW.Write(X_end);
+                BW.Write(Y_end);
+
+
+            }
+
+        }
 
 
         static void Main(string[] args)
@@ -327,6 +363,12 @@ namespace DeepWerewolf
             Program myGame = new Program();
             myGame.initConnection(myGame.serverIP, myGame.serverPort);
             
+            while (myGame.isPlaying)
+            {
+                //on reçoit la trame UPD
+                myGame.receive_frame();
+
+            }
 
         }
     }
