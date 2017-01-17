@@ -12,11 +12,11 @@ namespace DeepWerewolf
 {
     class Program
     {
-        public string pathToConfigFile = "C:\\DeepWerewolf\\config.txt";
-        public IPAddress serverIP;
-        public int serverPort;
-        public string name;
-        public GameMap currentMap;
+        public string pathToConfigFile { get; set; } = "C:\\DeepWerewolf\\configuration.txt";
+        public IPAddress serverIP { get; private set; }
+        public int serverPort { get; private set; }
+        public string name { get; private set; }
+        public GameMap currentMap { get; private set; }
 
         //Eléments nécessaires à la communication avec le serveur
         public TcpClient connectionSocket = new TcpClient();
@@ -35,6 +35,7 @@ namespace DeepWerewolf
             serverPort = int.Parse(settings[2]);
             
             
+            
 
         }
 
@@ -47,6 +48,16 @@ namespace DeepWerewolf
             this.NS = connectionSocket.GetStream();
             this.BR = new BinaryReader(this.NS);
             this.BW = new BinaryWriter(this.NS);
+
+            sendName();
+
+            //On recoit la frame SET
+            receive_frame();
+
+            //On recoit la frame HUM
+            receive_frame();
+
+            //Console.WriteLine(this.currentMap.size_x);
 
 
 
@@ -66,7 +77,7 @@ namespace DeepWerewolf
         }
 
 
-        public void receive_SET_frame()
+        public void receive_frame()
         {
             while (!NS.DataAvailable)
             {
@@ -74,32 +85,66 @@ namespace DeepWerewolf
             }
 
             string order = Encoding.ASCII.GetString(BR.ReadBytes(3));
+            
 
-            //Normalement, order vaut "SET"
-            if (order == "SET")
+            switch (order)
             {
-                //On lit un byte qui correspond à la première dimension de la grille
-                byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
-                int tailleX = BitConverter.ToInt16(buffer, 0);
+                case "SET":
+                    {
+                        //On lit un byte qui correspond au nombre de lignes
+                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int rows = BitConverter.ToInt16(buffer, 0);
 
-                //On lit un autre octet qui correspond à la deuxième dimension de la grille
-                buffer = new byte[2] { BR.ReadByte(), (byte)0 };
-                int tailleY = BitConverter.ToInt16(buffer, 0);
+                        //On lit un autre octet qui correspond au nombre de colonnes
+                        buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int columns = BitConverter.ToInt16(buffer, 0);
 
-                //On initialise la grille du jeu
-                this.currentMap = new GameMap(tailleX, tailleY);
+                        //On initialise la grille du jeu
+                        this.currentMap = new GameMap(rows, columns);
+                        Console.WriteLine("Taille de la map : {0}x{1}", rows, columns);
+                        break;
+                    }
+
+                case "HUM":
+                    {
+                        //On lit un byte qui correspond au nombre d'humains dans la grille
+                        byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                        int numberofHouses = BitConverter.ToInt16(buffer, 0);
+                        Console.WriteLine("Nombre de maisons : {0}", numberofHouses);
+
+                        //On lit ensuite autant de paires d'octets que de maisons pour connaitre les coordonnees des maisons
+                        for (int i=0; i<numberofHouses; i++)
+                        {
+                            //Coordonnée X
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int X = BitConverter.ToInt16(buffer, 0);
+
+                            //Coordonnée Y
+                            buffer = new byte[2] { BR.ReadByte(), (byte)0 };
+                            int Y = BitConverter.ToInt16(buffer, 0);
+
+                            //On place cette maison sur la carte
+                            Humans h = new Humans(1);
+                            Monsters m = new Monsters(0, false);
+                            currentMap.setTile(X, Y, h, m);
+                            Console.WriteLine("Maison {0} : coordonnées ({1},{2})", i+1, X, Y);
+                        }
+                        break;
+                    }
 
             }
 
         }
 
+        
+
 
         static void Main(string[] args)
         {
-            byte t = 24;
-            byte[] T = { t, (byte)0};
-            int t_int = BitConverter.ToInt16(T, 0);
-            Console.WriteLine(t_int);
+            Program myGame = new Program();
+            myGame.initConnection(myGame.serverIP, myGame.serverPort);
+            
+
         }
     }
 }

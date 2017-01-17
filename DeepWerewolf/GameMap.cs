@@ -12,16 +12,16 @@ namespace DeepWerewolf
         public int size_y { get; private set; }
         public Tile[,] tuiles { get; private set; }
 
-        public GameMap(int tailleX, int tailleY)
+        public GameMap(int rows, int columns)
         {
-            size_x = tailleX;
-            size_y = tailleY;
-            tuiles = new Tile[size_x, size_y];
+            size_x = rows;
+            size_y = columns;
+            tuiles = new Tile[size_y, size_x];
 
             //On remplit la map avec des cases vides
-            for (int i=0; i<size_x; i++)
+            for (int i=0; i<size_y; i++)
             {
-                for (int j=0; j<size_y; j++)
+                for (int j=0; j<size_x; j++)
                 {
                     Monsters m = new Monsters(0, false);
                     Humans h = new Humans(0);
@@ -31,14 +31,14 @@ namespace DeepWerewolf
             }
         }
 
-        public Tile getTile(int x, int y)
+        public Tile getTile(int abscisse, int ordonnee)
         {
-            return tuiles[x, y];
+            return tuiles[abscisse, ordonnee];
         }
 
-        public void setTile(int x, int y, Humans h, Monsters m)
+        public void setTile(int abscisse, int ordonnee, Humans h, Monsters m)
         {
-            tuiles[x, y] = new Tile(x, y, h, m);
+            tuiles[abscisse, ordonnee] = new Tile(abscisse, ordonnee, h, m);
         }
     }
 }
