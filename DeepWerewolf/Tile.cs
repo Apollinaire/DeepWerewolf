@@ -20,5 +20,35 @@ namespace DeepWerewolf
             this.humains = h;
             this.monstres = m;
         }
+
+        public int enemies()
+        {
+            if (monstres.isEnemy)
+            {
+                return monstres.number;
+            }
+
+            else
+            {
+                return 0;
+            }
+        }
+
+        public int allies()
+        {
+            if (monstres.isEnemy)
+            {
+                return 0;
+            }
+            else
+            {
+                return monstres.number;
+            }
+        }
+
+        public int preys()
+        {
+            return humains.number;
+        }
     }
 }

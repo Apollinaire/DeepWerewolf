@@ -159,6 +159,7 @@ namespace DeepWerewolf
                         Humans h = new Humans(0);
                         Monsters ourTeam = new Monsters(1, false);
                         currentMap.setTile(abs, ord, h, ourTeam);
+
                         currentMap.setStartTile(abs, ord);
 
                         Console.WriteLine("Notre case de départ : ({0},{1})", abs, ord);
@@ -296,20 +297,17 @@ namespace DeepWerewolf
                                 //on update notre map
                                 currentMap.setTile(X, Y, h, m);
 
-                                if (m.isEnemy)
-                                {
-                                    Console.WriteLine("({0},{1}) : {2} individus de l'espèce adverse", X, Y, monsters);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
-                                }
+                                //Affichage du changement dans la console
+                                Console.WriteLine("Changement {0} : ({1},{2}) : {3} humains, {4} congénères, {5} ennemis", i + 1, X, Y, currentMap.getTile(X, Y).preys(), currentMap.getTile(X, Y).allies(), currentMap.getTile(X, Y).enemies());
 
                                 
                             }
                         }
 
-                        Console.WriteLine("Il y a eu {0} changements. A nous de jouer", changes);
+                        if (order == "UPD")
+                        {
+                            Console.WriteLine("Il y a eu {0} changements. A nous de jouer", changes);
+                        }
                         break;
                     }
 
@@ -362,7 +360,63 @@ namespace DeepWerewolf
         {
             Program myGame = new Program();
             myGame.initConnection(myGame.serverIP, myGame.serverPort);
+
+            //on recoit une trame UPD
+            myGame.receive_frame();
+
+            //On envoie un ordre pour simuler une bataille entre 1 werewolf et 1 vampire
+            List<int[]> moves = new List<int[]>();
+            int start_X = myGame.currentMap.startTile.coord_x;
+            int start_Y = myGame.currentMap.startTile.coord_y;
+            int end_X = myGame.currentMap.startTile.coord_x;
+
+            int end_Y = myGame.espece == "vampire" ? myGame.currentMap.startTile.coord_y - 1 : myGame.currentMap.startTile.coord_y + 1;
+
+            int[] next_move = { start_X, start_Y, 1, end_X, end_Y };
+            moves.Add(next_move);
+
+            Thread.Sleep(4000);
+            myGame.send_MOV_frame(1, moves);
+
+            //on recoit une trame "UPD"
+            myGame.receive_frame();
+
+            //on déplace notre espèce vers le groupe de 4 humains
+
+            //1er move
+            moves = new List<int[]>();
+            start_X = myGame.currentMap.startTile.coord_x;
+            start_Y = myGame.currentMap.startTile.coord_y;
+            end_X = start_X -1;
+
+            end_Y = start_Y;
             
+            next_move = new int[5]{ start_X, start_Y, 3, end_X, end_Y };
+            moves.Add(next_move);
+
+            Thread.Sleep(4000);
+            myGame.send_MOV_frame(1, moves);
+
+            //reception de UPD
+            myGame.receive_frame();
+
+            //2e move
+            moves = new List<int[]>();
+            start_X = end_X;
+            start_Y = end_Y;
+            end_X = start_X - 1;
+
+            end_Y = myGame.espece == "vampire" ? start_Y - 1 : start_Y + 1;
+
+            next_move = new int[5] { start_X, start_Y, 3, end_X, end_Y };
+            moves.Add(next_move);
+
+            Thread.Sleep(4000);
+            if (myGame.isPlaying)
+            {
+                myGame.send_MOV_frame(1, moves);
+            }
+
             while (myGame.isPlaying)
             {
                 //on reçoit la trame UPD
