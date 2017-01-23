@@ -8,5 +8,11 @@ namespace DeepWerewolf
 {
     class Humans
     {
+        public int number { get; private set; }
+
+        public Humans(int num)
+        {
+            this.number = num;
+        }
     }
 }
