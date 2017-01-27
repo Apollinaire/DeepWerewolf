@@ -47,6 +47,14 @@ namespace DeepWerewolf
         {
             startTile = tuiles[abscisse, ordonnee];
         }
+        public int Distance(Tile tile1, Tile tile2)
+        {
+            int x_distance = Math.Abs(tile1.coord_x - tile2.coord_x);
+            int y_distance = Math.Abs(tile1.coord_y - tile2.coord_y);
+            int distance = 0;
+            return distance;
+
+        }
 
         
     }
