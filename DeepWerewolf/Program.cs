@@ -419,6 +419,67 @@ namespace DeepWerewolf
 
         }
 
+        public void ia_play()
+        {
+            //A exécuter après la réception d’une trame UPD
+
+            //Résumé : appelle la fonction calcul_meilleur_coup et create_order(), 
+            //et envoie l’ordre élaboré par create_order() au serveur avec la fonction send_MOV_frame()
+
+
+        }
+
+
+        public GameMap calcul_meilleur_coup(int profondeur)
+        {
+            //Renvoie un objet GameMap où on a effectué notre meilleur coup
+
+            //Résumé : cette fonction fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des maps représentant les coups possibles pour nous, et calcule
+            //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
+            //L’objet GameMap à renvoyer est la Map qui réalise ce maximum
+
+            //Remarque: S’inspire de IA_jouer du cours Open Classroom
+
+            return new GameMap(0,0);
+        }
+
+        public List<int[]> create_order(GameMap curMap, GameMap newMap)
+        {
+            //Renvoie un objet List < int[ ] > représentant les mouvements à effectuer pour passer de la currentMap à la newMap (qui sera en fait le résultat de la fonction calcul_meilleur_coup)
+
+            //Résumé: cette fonction identifie les changements entre les deux maps, et génère la liste de mouvements correspondante.
+
+
+            return new List<int[]>();
+        }
+
+
+        public double calcul_Max(GameMap MapATester, int profondeur)
+        {
+            //Renvoie un double représentant le maximum que l’on peut obtenir à partir de la situation représentée par le paramètre MapATester
+
+            //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possibles pour nous, et calcule
+            //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
+
+            //Remarque : S’inspire de la fonction Max du coup Open Classroom
+
+            return 0;
+        }
+
+        public double calcul_Min(GameMap MapPATester, int profondeur)
+        {
+            //Renvoie un double représentant le minimum que l’adversaire peut obtenir à partir de la situation représentée par le paramètre MapATester.
+
+            //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possible pour l’adversaire, et calcule
+            //MINIMUM[CalculMax(MapReprésentantLeCoup, profondeur - 1)].
+
+            //Remarque : S’inspire de la fonction Min du cours Open Classroom
+
+
+            return 0;
+        }
+
+
 
         static void Main(string[] args)
         {
