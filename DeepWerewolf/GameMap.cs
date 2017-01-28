@@ -93,9 +93,14 @@ namespace DeepWerewolf
             return 0;
         }
 
-        public double esperance_attaque(Tile Tuile_Attaquee, Tile Tuile_Source)
+        public double[] esperance_attaque(Tile Tuile_Attaquee, Tile Tuile_Source)
         {
-            //calcule l'esperance de la variable aléatoire delta(Nalliés - Nennemis) si le groupe dans Tuile_source attaque Tuile_Attaquee
+            //calcule les esperances des variables aléatoires delta(Nalliés), delta(Nennemis) et delta(Nhumains) si le groupe dans Tuile_source attaque Tuile_Attaquee
+
+            double esperance_allies = 0;
+            double esperance_ennemis = 0;
+            double esperance_humains = 0;
+
             if (Tuile_Source.allies() > 0)
             {
                 //c'est notre espèce qui attaque
@@ -103,23 +108,23 @@ namespace DeepWerewolf
                 if (Tuile_Attaquee.allies() > 0)
                 {
                     //on attaque une case où il y a des congénères, donc il n'en résulte aucune modification dans la différence Nalliés - Nennemis
-                    return 0;
+                    return new double[3]{ 0, 0, 0 };
                 }
 
                 else if (Tuile_Attaquee.enemies() > 0)
                 {
                     //on attaque une case avec des ennemis
 
-                    if (Tuile_Source.allies() >= 1.5*Tuile_Attaquee.enemies())
+                    if (Tuile_Source.allies() >= 1.5 * Tuile_Attaquee.enemies())
                     {
                         //on est assez nombreux, on les zigouille tous, et la différence Nalliés - Nennemis augmente du nombre d'ennemis tués
-                        return Tuile_Attaquee.enemies();
+                        return new double[3] { Tuile_Attaquee.enemies(), 0, 0 };
                     }
 
                     else if (Tuile_Attaquee.enemies() >= 1.5*Tuile_Source.allies())
                     {
                         //on est trop peu nombreux, on se fait zigouiller
-                        return -Tuile_Source.allies();
+                        return new double[3] { -Tuile_Source.allies(), 0, 0 };
                     }
 
                     else
@@ -128,13 +133,70 @@ namespace DeepWerewolf
                         int E1 = Tuile_Source.allies();
                         int E2 = Tuile_Attaquee.enemies();
 
-                        //on sait que delta(Nalliés - Nennemis) est égal à delta(Nalliés) - delta(Nennemis)
-                        //on connait la loi de probabilité
+                        
+                        
+
+
+                        double p = E1 < E2 ? E1 / (2 * E2) : E1 / E2 - 0.5; //la proba qu'on a de gagner
+
+                        for (int deltaN = 0; deltaN >= -E1; deltaN--)
+                        {
+                            //on connait la proba P(delta(Nallies) = deltaN)
+
+                            if (deltaN == -E1)
+                            {
+                                esperance_allies = esperance_allies + (p * coeff_bin(deltaN + E1, E1) * Math.Pow(p, deltaN + E1) * Math.Pow(1 - p, -deltaN) + 1 - p) / (E1 + 1);
+                            }
+
+                            else
+                            {
+                                esperance_allies = esperance_allies + p * coeff_bin(deltaN + E1, E1) * Math.Pow(p, deltaN + E1) * Math.Pow(1 - p, -deltaN) / (E1 + 1);
+                            }
+                        }
+
+                        for (int deltaN = 0; deltaN >= -E2; deltaN--)
+                        {
+                            //on connait la proba P(delta(Nennemis) = deltaN)
+
+                            if (deltaN == -E2)
+                            {
+                                esperance_ennemis = esperance_ennemis + ((1-p) * coeff_bin(deltaN + E2, E2) * Math.Pow(1-p, deltaN + E2) * Math.Pow(p, -deltaN) + p) / (E2 + 1);
+                            }
+
+                            else
+                            {
+                                esperance_ennemis = esperance_ennemis + (1-p) * coeff_bin(deltaN + E2, E2) * Math.Pow(1-p, deltaN + E2) * Math.Pow(p, -deltaN) / (E2 + 1);
+                            }
+                        }
+
+                        return new double[3] { esperance_allies, esperance_ennemis, 0 };
+
+
+
+
+
                     }
                 }
             }
 
-            return 0;
+            return new double[3] { 0, 0, 0 };
+        }
+
+        public int factorielle(int n)
+        {
+            int result = 1;
+            int i = 1;
+            while (i <= n)
+            {
+                result = result * i;
+                i++;
+            }
+            return result;
+        }
+
+        public int coeff_bin(int p, int n)
+        {
+            return factorielle(n) / (factorielle(p) * factorielle(n - p));
         }
     }
 }
