@@ -53,6 +53,7 @@ namespace DeepWerewolf
             int y_distance = Math.Abs(tile1.coord_y - tile2.coord_y);
             int dist = 0;
             return dist;
+            // Colax casse les couilles
 
         }
 
