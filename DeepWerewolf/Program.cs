@@ -515,7 +515,7 @@ namespace DeepWerewolf
             //end_X = start_X -1;
 
             //end_Y = start_Y;
-            
+
             //next_move = new int[5]{ start_X, start_Y, 3, end_X, end_Y };
             //moves.Add(next_move);
 
@@ -541,16 +541,32 @@ namespace DeepWerewolf
             //{
             //    myGame.send_MOV_frame(1, moves);
             //}
+            double seuil = 0.7;
 
             while (myGame.isPlaying)
             {
                 //on reçoit la trame UPD
                 myGame.receive_frame();
+                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil));
 
                 //on tape une commande de mouvement
                 myGame.interpreteCmd();
 
             }
+
+            
+
+            //myGame.currentMap = new GameMap(5, 5);
+            //myGame.currentMap.setTile(0, 0, 6, 0, false);
+            //myGame.currentMap.setTile(0, 1, 0, 7, false); //5 congeneres
+            //myGame.currentMap.setTile(0, 2, 0, 5, true); //4 ennemis
+
+
+            //double [] esperances = myGame.currentMap.esperance_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2));
+            //int[] result = myGame.currentMap.resultat_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2), seuil);
+
+            //Console.WriteLine("esperance allies : {0}; esperance ennemis : {1}; esperance humains : {2}", esperances[0], esperances[1], esperances[2]);
+            //Console.WriteLine("Avec un seuil de probabilite de {3}, on a : resultat allies : {0}; resultat ennemis : {1}; resultat humains : {2}", result[0], result[1], result[2], seuil);
 
         }
     }
