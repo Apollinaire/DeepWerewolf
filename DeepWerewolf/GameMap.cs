@@ -96,14 +96,14 @@ namespace DeepWerewolf
 
 
 
-        public double oracle(double seuil_proba)
+        public double oracle(double seuil_proba, int mode)
         {
             //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
 
-            return heuristique(false, seuil_proba) - heuristique(true, seuil_proba);
+            return heuristique(false, seuil_proba, mode) - heuristique(true, seuil_proba, mode);
         }
 
-        private double heuristique(bool enemy, double seuil_proba)
+        private double heuristique(bool enemy, double seuil_proba, int mode)
         {
 
             double result = 0;
@@ -142,11 +142,17 @@ namespace DeepWerewolf
                         double max = -1000;
                         foreach (Tile group in groups)
                         {
-                            //int[] res = resultat_attaque(t, group, seuil_proba);
-                            //max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(ennemis) - resultat(allies))/distance
+                            if (mode == 1)
+                            {
+                                int[] res = resultat_attaque(t, group, seuil_proba);
+                                max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(ennemis) - resultat(allies))/distance
+                            }
 
-                            double[] esp = esperance_attaque(t, group);
-                            max = Math.Max((esp[1] - esp[0]) / distance(t, group), max); //on calcule (esp(ennemis) - esp(allies))/distance
+                            else
+                            {
+                                double[] esp = esperance_attaque(t, group);
+                                max = Math.Max((esp[1] - esp[0]) / distance(t, group), max); //on calcule (esp(ennemis) - esp(allies))/distance
+                            }
                         }
                         result = result + max;
                     }
@@ -160,11 +166,17 @@ namespace DeepWerewolf
                         double max = -1000;
                         foreach (Tile group in groups)
                         {
-                            //int[] res = resultat_attaque(t, group, seuil_proba);
-                            //max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
+                            if (mode == 1)
+                            {
+                                int[] res = resultat_attaque(t, group, seuil_proba);
+                                max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
+                            }
 
-                            double[] esp = esperance_attaque(t, group);
-                            max = Math.Max((esp[0] - esp[1]) / distance(t, group), max); //on calcule (esp(allies) - esp(ennemis))/distance
+                            else
+                            {
+                                double[] esp = esperance_attaque(t, group);
+                                max = Math.Max((esp[0] - esp[1]) / distance(t, group), max); //on calcule (esp(allies) - esp(ennemis))/distance
+                            }
                         }
                         result = result + max;
                     }
