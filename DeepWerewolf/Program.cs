@@ -547,7 +547,7 @@ namespace DeepWerewolf
             {
                 //on reçoit la trame UPD
                 myGame.receive_frame();
-                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil));
+                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 1));
 
                 //on tape une commande de mouvement
                 myGame.interpreteCmd();
