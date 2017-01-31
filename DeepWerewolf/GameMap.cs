@@ -99,6 +99,8 @@ namespace DeepWerewolf
         public double oracle(double seuil_proba, int mode)
         {
             //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
+            //Mode = 1 pour resultat_attaque
+            //Mode = 2 pour esperance_attaque
 
             return heuristique(false, seuil_proba, mode) - heuristique(true, seuil_proba, mode);
         }
