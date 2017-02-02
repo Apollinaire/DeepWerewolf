@@ -96,16 +96,74 @@ namespace DeepWerewolf
 
 
 
-        public double oracle(double seuil_proba, int mode)
+        public double oracle(double seuil_proba, int base_heuristique)
         {
             //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
             //Mode = 1 pour resultat_attaque
             //Mode = 2 pour esperance_attaque
 
-            return heuristique(false, seuil_proba, mode) - heuristique(true, seuil_proba, mode);
+            return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
         }
 
-        private double heuristique(bool enemy, double seuil_proba, int mode)
+        private double heuristique_2(bool enemy, double seuil_proba, int mode)
+        {
+            //Pour cette heuristique, on va considérer les cases d'intérêt les plus proches de chaque groupe de monstres
+
+            //On commence par repérer les groupes d'alliés et d'ennemis
+            List<Tile> allies_groups = new List<Tile>();
+            List<Tile> enemies_groups = new List<Tile>();
+            List<Tile> human_groups = new List<Tile>();
+
+            foreach (Tile t in tuiles)
+            {
+                if (t.enemies() > 0)
+                {
+                    enemies_groups.Add(t);
+                }
+                else if (t.allies() > 0)
+                {
+                    allies_groups.Add(t);
+                }
+
+                else if (t.preys() > 0)
+                {
+                    //on remplit notre liste ordonnée suivant le nombre d'humains dans les cases
+                    if (human_groups.Count == 0)
+                    {
+                        human_groups.Add(t);
+                    }
+                    else
+                    {
+                        human_groups.Add(new Tile(0, 0, 0, 0, false));
+                        for (int i=0; i< human_groups.Count - 1; i++)
+                        {
+                            //on cherche le premier élément qui a un nombre d'humains plus petit que la tuile courante
+                            if (t.preys() > human_groups[i].preys())
+                            {
+                                //on décale toutes les autres cases dans la liste
+                                for (int j = human_groups.Count - 2; j >= i; j--)
+                                {
+                                    human_groups[j + 1] = new Tile(human_groups[j].coord_x, human_groups[j].coord_y, human_groups[j].preys(), human_groups[j].allies(), false);
+                                }
+                                
+                            }
+                            //on insère cette case dans la liste
+                            human_groups[i] = t;
+                        }
+                    }
+                    
+                }
+            }
+
+            if (enemy)
+            {
+                
+            }
+
+            return 0;
+        }
+
+        private double heuristique_1(bool enemy, double seuil_proba, int mode)
         {
 
             double result = 0;
@@ -171,7 +229,7 @@ namespace DeepWerewolf
                             if (mode == 1)
                             {
                                 int[] res = resultat_attaque(t, group, seuil_proba);
-                                max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
+                                max = Math.Max((double)(res[0] - res[1]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
                             }
 
                             else
@@ -183,6 +241,7 @@ namespace DeepWerewolf
                         result = result + max;
                     }
                 }
+                
             }
 
             return result;

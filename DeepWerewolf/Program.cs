@@ -475,7 +475,7 @@ namespace DeepWerewolf
         static void Main(string[] args)
         {
             Program myGame = new Program();
-            myGame.initConnection(myGame.serverIP, myGame.serverPort);
+            //myGame.initConnection(myGame.serverIP, myGame.serverPort);
 
             ////on recoit une trame UPD
             //myGame.receive_frame();
@@ -532,20 +532,63 @@ namespace DeepWerewolf
             //{
             //    myGame.send_MOV_frame(1, moves);
             //}
-            double seuil = 0.7;
 
-            while (myGame.isPlaying)
+            double seuil = 0.6;
+            int mode = 1;
+            myGame.isPlaying = true;
+            myGame.currentMap = new GameMap(5, 10);
+            myGame.currentMap.setTile(2, 2, 4, 0, false); //4 humains en 2,2
+            myGame.currentMap.setTile(4, 1, 0, 4, true); //4 ennemis en 4,1
+            myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
+            myGame.currentMap.setTile(9, 0, 2, 0, false); //2 humains en 9,0
+            myGame.currentMap.setTile(9, 2, 1, 0, false); //1 humains en 9,2
+            myGame.currentMap.setTile(9, 4, 2, 0, false); //2 humains en 9,4
+
+            Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, mode));
+
+            List<int[]> coords = new List<int[]> { new int[2] {5, 3 }, new int[2] { 5, 2 }, new int[2] { 4, 2 }, new int[2] { 3, 2}, new int[2] { 3, 3 }, new int[2] { 3, 4}, new int[2] { 4, 4 }, new int[2] { 5, 4 } };
+            //On teste toutes les cases à cote de nous
+            foreach (int[] c in coords)
             {
-                //on reçoit la trame UPD
-                myGame.receive_frame();
-                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 2));
-
-                //on tape une commande de mouvement
-                myGame.interpreteCmd();
+                myGame.currentMap.setTile(4, 3, 0, 0, false);
+                myGame.currentMap.setTile(c[0], c[1], 0, 4, false);
+                Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.oracle(seuil, mode), c[0], c[1]);
+                myGame.currentMap.setTile(c[0], c[1], 0, 0, false);
+                myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
 
             }
 
-            
+            //On teste les splits en 2 groupes
+            for( int i=0; i<coords.Count; i++)
+            {
+                int[] group1 = coords[i];
+                for (int j=i+1; j<coords.Count; j++)
+                {
+                    int[] group2 = coords[j];
+
+                    myGame.currentMap.setTile(4, 3, 0, 0, false);
+                    myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
+                    myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
+                    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.oracle(seuil, 2), group1[0], group1[1], group2[0], group2[1]);
+                    myGame.currentMap.setTile(group1[0], group1[1], 0, 0, false);
+                    myGame.currentMap.setTile(group2[0], group2[1], 0, 0, false);
+                    myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
+                    
+                }
+            }
+
+            //while (myGame.isPlaying)
+            //{
+            //    //on reçoit la trame UPD
+            //    myGame.receive_frame();
+            //    Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 2));
+
+            //    //on tape une commande de mouvement
+            //    myGame.interpreteCmd();
+
+            //}
+
+
 
             //myGame.currentMap = new GameMap(5, 5);
             //myGame.currentMap.setTile(0, 0, 6, 0, false);
