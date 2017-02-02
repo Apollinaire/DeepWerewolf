@@ -65,15 +65,42 @@ namespace DeepWerewolf
             int y_distance = Math.Abs(tile1.coord_y - tile2.coord_y);
             int dist = Math.Max(x_distance, y_distance);
             return dist;
-            // Colax casse les couilles
 
         }
 
         public GameMap interprete_moves(List<int[]> moves)
         {
             //Renvoie un objet GameMap qui applique les mouvements représentés par moves sur l’objet GameMap qui appelle la fonction.
-
-            return new GameMap(0, 0);
+            foreach (int[] table in moves)
+            {
+                Tile sourceTile = this.getTile(table[0], table[1]);
+                if (sourceTile.preys() ==0 && sourceTile.allies() >= table[2])
+                {
+                    Tile destination = this.getTile(table[3], table[4]);
+                    if (destination.enemies() == 0 && destination.preys() == 0)
+                    {
+                        // Il ne s'agit pas d'une attaque
+                        this.setTile(destination.coord_x, destination.coord_y, 0, table[2] + destination.allies(), false);
+                    }
+                    else
+                    {
+                        // Il s'agit d'une attaque
+                        int AlliesAfterAttack = table[2] + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[0]);
+                        int EnemiesAfterAttack = destination.enemies() + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[1]);
+                        int HumansAfterAttack = destination.preys() + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[2]);
+                        bool enemySurvival = AlliesAfterAttack > EnemiesAfterAttack ? false : true;
+                        int MonstersAfterAttack = AlliesAfterAttack > EnemiesAfterAttack ? AlliesAfterAttack : EnemiesAfterAttack;
+                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, enemySurvival);
+                    }
+                    // A la fin, on déplace les alliés de la case départ
+                    this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.allies() - table[2], false);
+                }
+                else
+                {
+                    Console.WriteLine("Wrong sourceTile entered");
+                }
+            }
+            return this;
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile)
