@@ -85,9 +85,10 @@ namespace DeepWerewolf
                     else
                     {
                         // Il s'agit d'une attaque
-                        int AlliesAfterAttack = table[2] + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[0]);
-                        int EnemiesAfterAttack = destination.enemies() + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[1]);
-                        int HumansAfterAttack = destination.preys() + (int)Math.Truncate(esperance_attaque(destination, sourceTile)[2]);
+                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], false);
+                        int AlliesAfterAttack = table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
+                        int EnemiesAfterAttack = destination.enemies() + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
+                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
                         bool enemySurvival = AlliesAfterAttack > EnemiesAfterAttack ? false : true;
                         int MonstersAfterAttack = AlliesAfterAttack > EnemiesAfterAttack ? AlliesAfterAttack : EnemiesAfterAttack;
                         this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, enemySurvival);
