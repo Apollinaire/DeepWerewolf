@@ -21,6 +21,17 @@ namespace DeepWerewolf
             this.monstres = m;
         }
 
+
+        //un constructeur un peu plus pratique
+        public Tile(int x, int y, int number_of_humans, int number_of_monsters, bool isEnemy)
+        {
+            this.coord_x = x;
+            this.coord_y = y;
+            this.humains = new Humans(number_of_humans);
+            this.monstres = new Monsters(number_of_monsters, isEnemy);
+
+        }
+
         public int enemies()
         {
             if (monstres.isEnemy)

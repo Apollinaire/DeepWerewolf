@@ -419,6 +419,58 @@ namespace DeepWerewolf
 
         }
 
+        public void ia_play()
+        {
+            //A exécuter après la réception d’une trame UPD
+
+            //Résumé : appelle la fonction calcul_meilleur_coup et create_order(), 
+            //et envoie l’ordre élaboré par create_order() au serveur avec la fonction send_MOV_frame()
+
+
+        }
+
+
+        public List<int[]> calcul_meilleur_coup(int profondeur)
+        {
+            //Renvoie un objet List< int[ ]> qui représente le meilleur coup possible
+
+            //Résumé : cette fonction fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des maps représentant les coups possibles pour nous, et calcule
+            //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
+            //L’objet List< int[] > à renvoyer est le coup qui réalise ce maximum
+
+            //Remarque: S’inspire de IA_jouer du cours Open Classroom
+
+            return new List<int[]>();
+        }
+
+
+
+        public double calcul_Max(GameMap MapATester, int profondeur)
+        {
+            //Renvoie un double représentant le maximum que l’on peut obtenir à partir de la situation représentée par le paramètre MapATester
+
+            //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possibles pour nous, et calcule
+            //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
+
+            //Remarque : S’inspire de la fonction Max du coup Open Classroom
+
+            return 0;
+        }
+
+        public double calcul_Min(GameMap MapPATester, int profondeur)
+        {
+            //Renvoie un double représentant le minimum que l’adversaire peut obtenir à partir de la situation représentée par le paramètre MapATester.
+
+            //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possible pour l’adversaire, et calcule
+            //MINIMUM[CalculMax(MapReprésentantLeCoup, profondeur - 1)].
+
+            //Remarque : S’inspire de la fonction Min du cours Open Classroom
+
+
+            return 0;
+        }
+
+
 
         static void Main(string[] args)
         {
@@ -454,7 +506,7 @@ namespace DeepWerewolf
             //end_X = start_X -1;
 
             //end_Y = start_Y;
-            
+
             //next_move = new int[5]{ start_X, start_Y, 3, end_X, end_Y };
             //moves.Add(next_move);
 
@@ -480,16 +532,32 @@ namespace DeepWerewolf
             //{
             //    myGame.send_MOV_frame(1, moves);
             //}
+            double seuil = 0.7;
 
             while (myGame.isPlaying)
             {
                 //on reçoit la trame UPD
                 myGame.receive_frame();
+                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 2));
 
                 //on tape une commande de mouvement
                 myGame.interpreteCmd();
 
             }
+
+            
+
+            //myGame.currentMap = new GameMap(5, 5);
+            //myGame.currentMap.setTile(0, 0, 6, 0, false);
+            //myGame.currentMap.setTile(0, 1, 0, 7, false); //5 congeneres
+            //myGame.currentMap.setTile(0, 2, 0, 5, true); //4 ennemis
+
+
+            //double [] esperances = myGame.currentMap.esperance_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2));
+            //int[] result = myGame.currentMap.resultat_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2), seuil);
+
+            //Console.WriteLine("esperance allies : {0}; esperance ennemis : {1}; esperance humains : {2}", esperances[0], esperances[1], esperances[2]);
+            //Console.WriteLine("Avec un seuil de probabilite de {3}, on a : resultat allies : {0}; resultat ennemis : {1}; resultat humains : {2}", result[0], result[1], result[2], seuil);
 
         }
     }
