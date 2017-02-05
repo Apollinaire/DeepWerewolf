@@ -447,27 +447,63 @@ namespace DeepWerewolf
 
         public double calcul_Max(GameMap MapATester, int profondeur)
         {
+            if (profondeur == 0)
+            {
+                return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
+            }
+            else
+            {
+                List<List<int[]>> possibleMoves = MapATester.calculate_moves(false);
+                double max = -10000; //Valeur initiale très basse pour min
+                double tmp;
+                foreach (List<int[]> move in possibleMoves)
+                {
+                    MapATester.interprete_moves(move);
+                    tmp = calcul_Min(MapATester, profondeur - 1);
+                    if (tmp > max)
+                    {
+                        max = tmp;
+                    }
+                }
+                return max;
+            }
             //Renvoie un double représentant le maximum que l’on peut obtenir à partir de la situation représentée par le paramètre MapATester
 
             //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possibles pour nous, et calcule
             //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
 
             //Remarque : S’inspire de la fonction Max du coup Open Classroom
-
-            return 0;
         }
 
-        public double calcul_Min(GameMap MapPATester, int profondeur)
+        public double calcul_Min(GameMap MapATester, int profondeur)
         {
+            if (profondeur == 0)
+            {
+                return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
+            }
+            else
+            {
+                List<List<int[]>> possibleMoves = MapATester.calculate_moves(false);
+                double min = 10000; //Valeur initiale très élevée pour min
+                double tmp;
+                foreach (List<int[]> move in possibleMoves)
+                {
+                    MapATester.interprete_moves(move);
+                    int pro = profondeur-1;
+                    tmp = calcul_Max(MapATester, profondeur - 1);
+                    if (tmp < min)
+                    {
+                        min = tmp;
+                    }
+                }
+                return min;
+            }
             //Renvoie un double représentant le minimum que l’adversaire peut obtenir à partir de la situation représentée par le paramètre MapATester.
 
             //Résumé : elle fait appel à calculate_moves() et à interprete_moves() pour avoir la liste des coups possible pour l’adversaire, et calcule
             //MINIMUM[CalculMax(MapReprésentantLeCoup, profondeur - 1)].
 
             //Remarque : S’inspire de la fonction Min du cours Open Classroom
-
-
-            return 0;
         }
 
 
