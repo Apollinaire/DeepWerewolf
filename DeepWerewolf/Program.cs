@@ -531,7 +531,7 @@ namespace DeepWerewolf
             myGame.currentMap.setTile(9, 4, 2, 0, false); //2 humains en 9,4
 
             //Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, mode));
-            Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.heuristique_2());
+            Console.WriteLine("Favorabilite du plateau : {0}\n", myGame.currentMap.heuristique_2());
 
             List<int[]> coords = new List<int[]> { new int[2] { 5, 3 }, new int[2] { 5, 2 }, new int[2] { 4, 2 }, new int[2] { 3, 2 }, new int[2] { 3, 3 }, new int[2] { 3, 4 }, new int[2] { 4, 4 }, new int[2] { 5, 4 } };
             //On teste toutes les cases à cote de nous
@@ -540,7 +540,7 @@ namespace DeepWerewolf
                 myGame.currentMap.setTile(4, 3, 0, 0, false);
                 myGame.currentMap.setTile(c[0], c[1], 0, 4, false);
                 //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.oracle(seuil, mode), c[0], c[1]);
-                Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.heuristique_2(), c[0], c[1]);
+                Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}\n", myGame.currentMap.heuristique_2(), c[0], c[1]);
                 myGame.currentMap.setTile(c[0], c[1], 0, 0, false);
                 myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
 
@@ -558,7 +558,7 @@ namespace DeepWerewolf
                     myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
                     myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
                     //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.oracle(seuil, 2), group1[0], group1[1], group2[0], group2[1]);
-                    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
+                    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}\n", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
                     myGame.currentMap.setTile(group1[0], group1[1], 0, 0, false);
                     myGame.currentMap.setTile(group2[0], group2[1], 0, 0, false);
                     myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3

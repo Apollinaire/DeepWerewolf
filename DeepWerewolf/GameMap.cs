@@ -294,6 +294,7 @@ namespace DeepWerewolf
                 foreach (Tile allie in allies_groups.Keys)
                 {
                     //On cherche la meilleure Tile attaquable par ce groupe
+                    Tile fictive_allie = new Tile(((int[])allies_groups[allie])[1], ((int[])allies_groups[allie])[2], 0, 0, false);
                     int best_i = -1;
                     int i = 0;
                     bool keepLooking = true;
@@ -302,7 +303,7 @@ namespace DeepWerewolf
                     int max = 0;
                     while (keepLooking && i < dispo_allies.Count)
                     {
-                        if (dispo_allies[i].preys() <= allie.allies())
+                        if (dispo_allies[i].preys() <= ((int[])allies_groups[allie])[0])
                         {
                             if (!max_found)
                             {
@@ -312,9 +313,9 @@ namespace DeepWerewolf
 
                             if (dispo_allies[i].preys() == max)
                             {
-                                if (distance(dispo_allies[i], allie) < dist)
+                                if (distance(dispo_allies[i], fictive_allie) < dist)
                                 {
-                                    dist = distance(dispo_allies[i], allie);
+                                    dist = distance(dispo_allies[i], fictive_allie);
                                     best_i = i;
                                 }
 
@@ -361,7 +362,6 @@ namespace DeepWerewolf
                         //il y a une case attaquable par ce groupe d'allies
 
                         //on vérifie d'abord qu'il n'y a pas un autre groupe qui se situerait sur le chemin vers ce groupe d'humain
-                        Tile fictive_allie = new Tile(((int[])allies_groups[allie])[1], ((int[])allies_groups[allie])[2], 0, 0, false);
                         int max_bis = 0;
                         int new_best_i = best_i;
                         Tile target_tile = dispo_allies[best_i];
@@ -505,10 +505,12 @@ namespace DeepWerewolf
                 //on va parcourir les tiles d'enemies de la moins peuplée à la plus peuplée
 
                 bool allPossibleEnemiesAffected = true;
+
                 foreach (Tile enemie in enemies_groups.Keys)
                 {
 
                     //On cherche la meilleure Tile attaquable par ce groupe
+                    Tile fictive_enemie = new Tile(((int[])enemies_groups[enemie])[1], ((int[])enemies_groups[enemie])[2], 0, 0, false);
                     int best_i = -1;
                     int i = 0;
                     bool keepLooking = true;
@@ -517,7 +519,7 @@ namespace DeepWerewolf
                     int max = 0;
                     while (keepLooking && i < dispo_enemies.Count)
                     {
-                        if (dispo_enemies[i].preys() <= enemie.enemies())
+                        if (dispo_enemies[i].preys() <= ((int[])enemies_groups[enemie])[0])
                         {
                             if (!max_found)
                             {
@@ -527,9 +529,9 @@ namespace DeepWerewolf
 
                             if (dispo_enemies[i].preys() == max)
                             {
-                                if (distance(dispo_enemies[i], enemie) < dist)
+                                if (distance(dispo_enemies[i], fictive_enemie) < dist)
                                 {
-                                    dist = distance(dispo_enemies[i], enemie);
+                                    dist = distance(dispo_enemies[i], fictive_enemie);
                                     best_i = i;
                                 }
 
@@ -577,7 +579,6 @@ namespace DeepWerewolf
 
                         //on vérifie d'abord s'il n'y a pas un groupe d'humains à attaquer sur le chemin vers la tuile désignée par best_i
                         Tile target_tile = dispo_enemies[best_i];
-                        Tile fictive_enemie = new Tile(((int[])enemies_groups[enemie])[1], ((int[])enemies_groups[enemie])[2], 0, 0, false);
                         int max_bis = 0;
                         int new_best_i = best_i;
                         for (int index = 0; index < dispo_enemies.Count; index ++)
@@ -714,17 +715,23 @@ namespace DeepWerewolf
 
             //Affichage du contenu des dictionnaires
             Console.WriteLine("Dictionnaire allies :");
+            double res = 0.0;
             foreach (Tile t in allies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
-            }
+                res = res + (double)((int[])allies_groups[t])[0] + 1.0 / ((int[])allies_groups[t])[3];
+    }
             Console.WriteLine("");
             Console.WriteLine("Dictionnaire enemies :");
             foreach (Tile t in enemies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
+                res = res - (double)((int[])enemies_groups[t])[0] - 1.0 / ((int[])enemies_groups[t])[3];
             }
-            return 0;
+            Console.WriteLine("");
+
+            //On retourne la différence (nombre final + 1/distance)allies - (nombre final + 1/distance)ennemis
+            return res;
         }
 
         public int distance_min(List<Tile> monsters_groups, Tile target_Tile, List<int> offsets = null)
