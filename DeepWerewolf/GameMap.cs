@@ -142,11 +142,16 @@ namespace DeepWerewolf
             List<Tile> allies_to_attribute = new List<Tile>();
             List<Tile> enemies_to_attribute = new List<Tile>();
             List<Tile> human_groups = new List<Tile>();
+            int number_of_allies = 0;
+            int number_of_enemies = 0;
 
             foreach (Tile t in tuiles)
             {
                 if (t.enemies() > 0)
                 {
+                    //on incrémente le nombre d'ennemis
+                    number_of_enemies += t.enemies();
+
                     //on remplit notre liste ordonnée par ordre croissant du nombre de monstres dans les cases
                     if (enemies_to_attribute.Count == 0)
                     {
@@ -183,6 +188,8 @@ namespace DeepWerewolf
                 }
                 else if (t.allies() > 0)
                 {
+                    //on incrémente le nombre d'allies
+                    number_of_allies += t.allies();
                     //on remplit notre liste ordonnée par ordre croissant du nombre de monstres dans les cases
                     if (allies_to_attribute.Count == 0)
                     {
@@ -719,14 +726,15 @@ namespace DeepWerewolf
             foreach (Tile t in allies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
-                res = res + (double)((int[])allies_groups[t])[0] + 1.0 / ((int[])allies_groups[t])[3];
-    }
+                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.75 + 1.0 / (((int[])allies_groups[t])[3] + 2));
+            }
+
             Console.WriteLine("");
             Console.WriteLine("Dictionnaire enemies :");
             foreach (Tile t in enemies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
-                res = res - (double)((int[])enemies_groups[t])[0] - 1.0 / ((int[])enemies_groups[t])[3];
+                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.75 + 1.0 / (((int[])enemies_groups[t])[3] + 2));
             }
             Console.WriteLine("");
 
