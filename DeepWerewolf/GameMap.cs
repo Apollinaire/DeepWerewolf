@@ -74,24 +74,39 @@ namespace DeepWerewolf
             foreach (int[] table in moves)
             {
                 Tile sourceTile = this.getTile(table[0], table[1]);
-                if (sourceTile.preys() ==0 && sourceTile.allies() >= table[2])
+                if (sourceTile.preys() ==0 && sourceTile.monstres.number >= table[2])
                 {
                     Tile destination = this.getTile(table[3], table[4]);
-                    if (destination.enemies() == 0 && destination.preys() == 0)
+                    bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
+                    int monstersAtDestination;
+                    int opposedForcesAtDestination;
+                    if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
+                    {
+                        enemyMove = false; // C'est nous qui jouons
+                        monstersAtDestination = destination.allies();
+                        opposedForcesAtDestination = destination.enemies();
+                    }
+                    else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
+                    {
+                        enemyMove = true; // C'est l'ennemi qui joue
+                        monstersAtDestination = destination.enemies();
+                        opposedForcesAtDestination = destination.allies();
+                    }
+                    if (opposedForcesAtDestination == 0 && destination.preys() == 0)
                     {
                         // Il ne s'agit pas d'une attaque
-                        this.setTile(destination.coord_x, destination.coord_y, 0, table[2] + destination.allies(), false);
+                        this.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
                     }
                     else
                     {
                         // Il s'agit d'une attaque
-                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], false);
-                        int AlliesAfterAttack = table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                        int EnemiesAfterAttack = destination.enemies() + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
+                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
+                        int AttackersAfterAttack = table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
+                        int DefendersAfterAttack = opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
                         int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
-                        bool enemySurvival = AlliesAfterAttack > EnemiesAfterAttack ? false : true;
-                        int MonstersAfterAttack = AlliesAfterAttack > EnemiesAfterAttack ? AlliesAfterAttack : EnemiesAfterAttack;
-                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, enemySurvival);
+                        bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
+                        int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
+                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, defenderSurvival);
                     }
                     // A la fin, on déplace les alliés de la case départ
                     this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.allies() - table[2], false);
