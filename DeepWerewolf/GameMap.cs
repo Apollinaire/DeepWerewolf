@@ -720,25 +720,73 @@ namespace DeepWerewolf
 
             }
 
-            //Affichage du contenu des dictionnaires
+            //Affichage du contenu des dictionnaires et calcul final de la valeur à renvoyer
             Console.WriteLine("Dictionnaire allies :");
             double res = 0.0;
+            int n_gr_allies = 0;
+            int n_gr_enemies = 0;
+            int c = 0;
+            int total_dist = 0;
+            Tile previous_group = new Tile(0, 0, 0, 0, false);
             foreach (Tile t in allies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
-                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.75 + 1.0 / (((int[])allies_groups[t])[3] + 2));
+
+                //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
+                n_gr_allies++;
+                if (c>0)
+                {
+                    total_dist += distance(previous_group, t);
+                }
+
+                c++;
+                previous_group = t;
+
+                //on met à jour res
+                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.75 + 1.0 / (((int[])allies_groups[t])[3] + 4));
+            }
+
+            //Une fois qu'on a la distance totale, on ajoute à res le terme qui représente la distance entre les groupes
+            res = res + (double)(1 / n_gr_allies);
+            if (n_gr_allies > 1)
+            {
+                res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
             }
 
             Console.WriteLine("");
+
+            c = 0;
+            total_dist = 0;
             Console.WriteLine("Dictionnaire enemies :");
+
             foreach (Tile t in enemies_groups.Keys)
             {
                 Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
-                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.75 + 1.0 / (((int[])enemies_groups[t])[3] + 2));
+
+                //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
+                n_gr_enemies++;
+                if (c > 0)
+                {
+                    total_dist += distance(previous_group, t);
+                }
+
+                c++;
+                previous_group = t;
+
+                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.75 + 1.0 / (((int[])enemies_groups[t])[3] + 4));
             }
+
+            //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes
+            res = res - 1.0 / n_gr_enemies;
+            if (n_gr_enemies > 1)
+            {
+                res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
+            }
+
             Console.WriteLine("");
 
-            //On retourne la différence (nombre final + 1/distance)allies - (nombre final + 1/distance)ennemis
+            
+            //On retourne la différence (nombre final + gain potentiel * (0.75 + 1/(distance + 4))allies - (nombre final + gain potentiel * (0.75 + 1/(distance + 4))ennemis
             return res;
         }
 
