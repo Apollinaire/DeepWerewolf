@@ -102,12 +102,12 @@ namespace DeepWerewolf
                     {
                         // Il s'agit d'une attaque
                         Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
-                        int AttackersAfterAttack = table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                        int DefendersAfterAttack = opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
+                        int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
+                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
                         int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
                         bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
                         int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
-                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, defenderSurvival);
+                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
                     }
                     // A la fin, on déplace les alliés de la case départ
                     this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
