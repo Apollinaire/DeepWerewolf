@@ -423,8 +423,8 @@ namespace DeepWerewolf
         {
             //A exécuter après la réception d’une trame UPD
 
-            //Résumé : appelle la fonction calcul_meilleur_coup et create_order(), 
-            //et envoie l’ordre élaboré par create_order() au serveur avec la fonction send_MOV_frame()
+            //Résumé : appelle la fonction calcul_meilleur_coup, 
+            //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
 
 
         }
@@ -511,89 +511,85 @@ namespace DeepWerewolf
         static void Main(string[] args)
         {
             Program myGame = new Program();
-            myGame.initConnection(myGame.serverIP, myGame.serverPort);
+            //myGame.initConnection(myGame.serverIP, myGame.serverPort);
 
-            ////on recoit une trame UPD
-            //myGame.receive_frame();
+            Tile t1 = new Tile(1, 1, 4, 0, false);
+            Tile t2 = new Tile(1, 1, 4, 0, false);
+            //Console.WriteLine(t1.Equals(t2));
 
-            ////On envoie un ordre pour simuler une bataille entre 1 werewolf et 1 vampire
-            //List<int[]> moves = new List<int[]>();
-            //int start_X = myGame.currentMap.startTile.coord_x;
-            //int start_Y = myGame.currentMap.startTile.coord_y;
-            //int end_X = myGame.currentMap.startTile.coord_x;
+            //myGame.currentMap.heuristique_2();
 
-            //int end_Y = myGame.espece == "vampire" ? myGame.currentMap.startTile.coord_y - 1 : myGame.currentMap.startTile.coord_y + 1;
+            //double seuil = 0.6;
+            //int mode = 1;
+            //myGame.isPlaying = true;
+            myGame.currentMap = new GameMap(5, 10);
+            myGame.currentMap.setTile(2, 2, 4, 0, false); //4 humains en 2,2
+            myGame.currentMap.setTile(4, 1, 0, 4, true); //4 ennemis en 4,1
+            myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
+            myGame.currentMap.setTile(9, 0, 2, 0, false); //2 humains en 9,0
+            myGame.currentMap.setTile(9, 2, 1, 0, false); //1 humains en 9,2
+            myGame.currentMap.setTile(9, 4, 2, 0, false); //2 humains en 9,4
 
-            //int[] next_move = { start_X, start_Y, 1, end_X, end_Y };
-            //moves.Add(next_move);
+            //Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, mode));
+            Console.WriteLine("Favorabilite du plateau : {0}\n", myGame.currentMap.heuristique_2());
 
-            //Thread.Sleep(4000);
-            //myGame.send_MOV_frame(1, moves);
-
-            ////on recoit une trame "UPD"
-            //myGame.receive_frame();
-
-            ////on déplace notre espèce vers le groupe de 4 humains
-
-            ////1er move
-            //moves = new List<int[]>();
-            //start_X = myGame.currentMap.startTile.coord_x;
-            //start_Y = myGame.currentMap.startTile.coord_y;
-            //end_X = start_X -1;
-
-            //end_Y = start_Y;
-
-            //next_move = new int[5]{ start_X, start_Y, 3, end_X, end_Y };
-            //moves.Add(next_move);
-
-            //Thread.Sleep(4000);
-            //myGame.send_MOV_frame(1, moves);
-
-            ////reception de UPD
-            //myGame.receive_frame();
-
-            ////2e move
-            //moves = new List<int[]>();
-            //start_X = end_X;
-            //start_Y = end_Y;
-            //end_X = start_X - 1;
-
-            //end_Y = myGame.espece == "vampire" ? start_Y - 1 : start_Y + 1;
-
-            //next_move = new int[5] { start_X, start_Y, 3, end_X, end_Y };
-            //moves.Add(next_move);
-
-            //Thread.Sleep(4000);
-            //if (myGame.isPlaying)
-            //{
-            //    myGame.send_MOV_frame(1, moves);
-            //}
-            double seuil = 0.7;
-
-            while (myGame.isPlaying)
+            List<int[]> coords = new List<int[]> { new int[2] { 5, 3 }, new int[2] { 5, 2 }, new int[2] { 4, 2 }, new int[2] { 3, 2 }, new int[2] { 3, 3 }, new int[2] { 3, 4 }, new int[2] { 4, 4 }, new int[2] { 5, 4 } };
+            //On teste toutes les cases à cote de nous
+            foreach (int[] c in coords)
             {
-                //on reçoit la trame UPD
-                myGame.receive_frame();
-                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 2));
-
-                //on tape une commande de mouvement
-                myGame.interpreteCmd();
+                myGame.currentMap.setTile(4, 3, 0, 0, false);
+                myGame.currentMap.setTile(c[0], c[1], 0, 4, false);
+                //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.oracle(seuil, mode), c[0], c[1]);
+                Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}\n", myGame.currentMap.heuristique_2(), c[0], c[1]);
+                myGame.currentMap.setTile(c[0], c[1], 0, 0, false);
+                myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
 
             }
 
-            
+            //On teste les splits en 2 groupes
+            for (int i = 0; i < coords.Count; i++)
+            {
+                int[] group1 = coords[i];
+                for (int j = i + 1; j < coords.Count; j++)
+                {
+                    int[] group2 = coords[j];
 
-            //myGame.currentMap = new GameMap(5, 5);
-            //myGame.currentMap.setTile(0, 0, 6, 0, false);
-            //myGame.currentMap.setTile(0, 1, 0, 7, false); //5 congeneres
-            //myGame.currentMap.setTile(0, 2, 0, 5, true); //4 ennemis
+                    myGame.currentMap.setTile(4, 3, 0, 0, false);
+                    myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
+                    myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
+                    //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.oracle(seuil, 2), group1[0], group1[1], group2[0], group2[1]);
+                    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}\n", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
+                    myGame.currentMap.setTile(group1[0], group1[1], 0, 0, false);
+                    myGame.currentMap.setTile(group2[0], group2[1], 0, 0, false);
+                    myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
 
+                    //if (j == 6 && i == 2)
+                    //{
+                    //    myGame.currentMap.setTile(4, 3, 0, 0, false);
+                    //    myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
+                    //    myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
+                    //    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
 
-            //double [] esperances = myGame.currentMap.esperance_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2));
-            //int[] result = myGame.currentMap.resultat_attaque(myGame.currentMap.getTile(0, 1), myGame.currentMap.getTile(0, 2), seuil);
+                    //}
 
-            //Console.WriteLine("esperance allies : {0}; esperance ennemis : {1}; esperance humains : {2}", esperances[0], esperances[1], esperances[2]);
-            //Console.WriteLine("Avec un seuil de probabilite de {3}, on a : resultat allies : {0}; resultat ennemis : {1}; resultat humains : {2}", result[0], result[1], result[2], seuil);
+                }
+            }
+
+            //while (myGame.isPlaying)
+            //{
+            //    //on reçoit la trame UPD
+            //    myGame.receive_frame();
+            //    Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, 2));
+
+            //    //on tape une commande de mouvement
+            //    myGame.interpreteCmd();
+
+            //}
+
+            var moves = new List<int[]>();
+            moves.Add(new int[5] { 4, 3, 3, 2, 2 });
+            myGame.currentMap.interprete_moves(moves);
+            Console.WriteLine(myGame.currentMap.getTile(2, 2).preys());
 
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -139,16 +140,698 @@ namespace DeepWerewolf
 
 
 
-        public double oracle(double seuil_proba, int mode)
+        public double oracle(double seuil_proba, int base_heuristique)
         {
             //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
             //Mode = 1 pour resultat_attaque
             //Mode = 2 pour esperance_attaque
 
-            return heuristique(false, seuil_proba, mode) - heuristique(true, seuil_proba, mode);
+            return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
         }
 
-        private double heuristique(bool enemy, double seuil_proba, int mode)
+        public double heuristique_2()
+        {
+            //Cette fonction va attribuer à chaque groupe de monstres le ou les groupes d'humains qu'il peut convertir
+
+            //On commence par repérer les groupes d'alliés et d'ennemis
+            List<Tile> allies_to_attribute = new List<Tile>();
+            List<Tile> enemies_to_attribute = new List<Tile>();
+            List<Tile> human_groups = new List<Tile>();
+            int number_of_allies = 0;
+            int number_of_enemies = 0;
+
+            foreach (Tile t in tuiles)
+            {
+                if (t.enemies() > 0)
+                {
+                    //on incrémente le nombre d'ennemis
+                    number_of_enemies += t.enemies();
+
+                    //on remplit notre liste ordonnée par ordre croissant du nombre de monstres dans les cases
+                    if (enemies_to_attribute.Count == 0)
+                    {
+                        enemies_to_attribute.Add(t);
+                    }
+                    else
+                    {
+                        enemies_to_attribute.Add(new Tile(0, 0, 0, 0, true));
+                        int i0 = enemies_to_attribute.Count - 1;
+                        bool found = false;
+                        for (int i = 0; i < enemies_to_attribute.Count - 1; i++)
+                        {
+                            if (!found)
+                            {
+                                //on cherche le premier élément qui a un nombre de monstres plus petit que la tuile courante
+                                if (t.enemies() < enemies_to_attribute[i].enemies())
+                                {
+                                    found = true;
+                                    i0 = 0;
+                                    //on décale toutes les autres cases dans la liste
+                                    for (int j = enemies_to_attribute.Count - 2; j >= i; j--)
+                                    {
+                                        enemies_to_attribute[j + 1] = new Tile(enemies_to_attribute[j].coord_x, enemies_to_attribute[j].coord_y, enemies_to_attribute[j].preys(), enemies_to_attribute[j].enemies(), true);
+                                    }
+
+                                }
+                            }
+                            
+                        }
+                        //on insère cette case dans la liste
+                        enemies_to_attribute[i0] = t;
+                    }
+
+                }
+                else if (t.allies() > 0)
+                {
+                    //on incrémente le nombre d'allies
+                    number_of_allies += t.allies();
+                    //on remplit notre liste ordonnée par ordre croissant du nombre de monstres dans les cases
+                    if (allies_to_attribute.Count == 0)
+                    {
+                        allies_to_attribute.Add(t);
+                    }
+                    else
+                    {
+                        allies_to_attribute.Add(new Tile(0, 0, 0, 0, false));
+                        int i0 = allies_to_attribute.Count - 1;
+                        bool found = false;
+                        for (int i = 0; i < allies_to_attribute.Count - 1; i++)
+                        {
+                            if (!found)
+                            {
+                                //on cherche le premier élément qui a un nombre de monstres plus petit que la tuile courante
+                                if (t.allies() < allies_to_attribute[i].allies())
+                                {
+                                    found = true;
+                                    i0 = i;
+                                    //on décale toutes les autres cases dans la liste
+                                    for (int j = allies_to_attribute.Count - 2; j >= i; j--)
+                                    {
+                                        allies_to_attribute[j + 1] = new Tile(allies_to_attribute[j].coord_x, allies_to_attribute[j].coord_y, allies_to_attribute[j].preys(), allies_to_attribute[j].allies(), false);
+                                    }
+
+                                }
+                            }
+                            
+                        }
+                        //on insère cette case dans la liste
+                        allies_to_attribute[i0] = t;
+                    }
+                }
+
+                else if (t.preys() > 0)
+                {
+                    //on remplit notre liste ordonnée suivant le nombre d'humains dans les cases
+                    if (human_groups.Count == 0)
+                    {
+                        human_groups.Add(t);
+                    }
+                    else
+                    {
+                        human_groups.Add(new Tile(0, 0, 0, 0, false));
+                        int i0 = human_groups.Count - 1;
+                        bool found = false;
+                        for (int i=0; i< human_groups.Count - 1; i++)
+                        {
+                            if (!found)
+                            {
+                                //on cherche le premier élément qui a un nombre d'humains plus petit que la tuile courante
+                                if (t.preys() > human_groups[i].preys())
+                                {
+                                    found = true;
+                                    i0 = i;   
+                                    //on décale toutes les autres cases dans la liste
+                                    for (int j = human_groups.Count - 2; j >= i; j--)
+                                    {
+                                        human_groups[j + 1] = new Tile(human_groups[j].coord_x, human_groups[j].coord_y, human_groups[j].preys(), human_groups[j].allies(), false);
+                                    }
+
+                                }
+                            }
+                            
+                        }
+                        //on insère cette case dans la liste
+                        human_groups[i0] = t;
+                    }
+                    
+                }
+            }
+
+            //A ce stade, on a donc des listes ordonnées par ordre croissant de nombre de monstres,
+            //et une liste ordonnée par ordre décroissant du nombre d'humains
+
+            List<Tile> dispo_allies = new List<Tile>(); //la liste des tuiles encoire dispo pour les groupes d'alliés
+            List<Tile> dispo_enemies = new List<Tile>(); // la liste des tuiles encore dispo pour l'ennemi
+            for( int i=0; i< human_groups.Count; i++)
+            {
+                Tile t = human_groups[i];
+                dispo_allies.Add(new Tile(t.coord_x, t.coord_y, t.preys(), t.allies(), false));
+                dispo_enemies.Add(new Tile(t.coord_x, t.coord_y, t.preys(), t.allies(), false));
+
+            }
+
+            OrderedDictionary allies_groups = new OrderedDictionary();
+            OrderedDictionary enemies_groups = new OrderedDictionary();
+            for (int i = 0; i < allies_to_attribute.Count; i++)
+            {
+                Tile t = allies_to_attribute[i];
+                allies_groups.Add(new Tile(t.coord_x, t.coord_y, t.preys(), t.allies(), false), new int[4] { t.allies(), t.coord_x, t.coord_y, 0 });
+            }
+
+            for (int i = 0; i < enemies_to_attribute.Count; i++)
+            {
+                Tile t = enemies_to_attribute[i];
+                enemies_groups.Add(new Tile(t.coord_x, t.coord_y, t.preys(), t.enemies(), true), new int[4] { t.enemies(), t.coord_x, t.coord_y, 0 });
+            }
+
+            //On commence maintenant l'algorithme d'attribution des cases d'humains
+            //_____________________________________________________________________
+
+            while (enemies_to_attribute.Count > 0 || allies_to_attribute.Count > 0)
+            {
+                //on va parcourir les tiles d'allies de la moins peuplée à la plus peuplée
+
+                bool allPossibleAlliesAffected = true;
+
+                foreach (Tile allie in allies_groups.Keys)
+                {
+                    //On cherche la meilleure Tile attaquable par ce groupe
+                    Tile fictive_allie = new Tile(((int[])allies_groups[allie])[1], ((int[])allies_groups[allie])[2], 0, 0, false);
+                    int best_i = -1;
+                    int i = 0;
+                    bool keepLooking = true;
+                    bool max_found = false;
+                    int dist = 1000;
+                    int max = 0;
+                    while (keepLooking && i < dispo_allies.Count)
+                    {
+                        if (dispo_allies[i].preys() <= ((int[])allies_groups[allie])[0])
+                        {
+                            if (!max_found)
+                            {
+                                max = dispo_allies[i].preys();
+                                max_found = true;
+                            }
+
+                            if (dispo_allies[i].preys() == max)
+                            {
+                                if (distance(dispo_allies[i], fictive_allie) < dist)
+                                {
+                                    dist = distance(dispo_allies[i], fictive_allie);
+                                    best_i = i;
+                                }
+
+                                i++;
+                            }
+                            else
+                            {
+                                keepLooking = false;
+                            }
+
+                        }
+
+                        else
+                        {
+                            i++;
+                        }
+                    }
+
+                    if (best_i == -1)
+                    {
+                        //cela veut dire qu'il n'y a plus de tile d'humains attaquable par ce groupe
+                        //on va retirer la Tile en question de la liste des groupes à associer à une case d'humains
+                        int index_to_remove = -1;
+                        int j = 0;
+                        bool found = false;
+                        while (!found && j < allies_to_attribute.Count)
+                        {
+                            if (allies_to_attribute[j].coord_x == allie.coord_x && allies_to_attribute[j].coord_y == allie.coord_y)
+                            {
+                                index_to_remove = j;
+                                found = true;
+                            }
+                            j++;
+                        }
+
+                        if (index_to_remove != -1)
+                        {
+                            allies_to_attribute.RemoveAt(index_to_remove);
+                        }
+                    }
+
+                    else
+                    {
+                        //il y a une case attaquable par ce groupe d'allies
+
+                        //on vérifie d'abord qu'il n'y a pas un autre groupe qui se situerait sur le chemin vers ce groupe d'humain
+                        int max_bis = 0;
+                        int new_best_i = best_i;
+                        Tile target_tile = dispo_allies[best_i];
+                        for (int index = 0; index < dispo_allies.Count; index++)
+                        {
+                            Tile t = dispo_allies[index];
+                            if (!(t.coord_x == fictive_allie.coord_x && t.coord_y == fictive_allie.coord_y) && !(t.Equals(dispo_allies[best_i])))
+                            {
+                                if (is_between(t, fictive_allie, dispo_allies[best_i]) && t.preys() > max_bis)
+                                {
+                                    target_tile = t;
+                                    max_bis = t.preys();
+                                    new_best_i = index;
+                                }
+                            }
+                        }
+                        
+                        //on récupère les coordonnées fictives actuelles et les distances fictives des groupes encore dans enemies_to_attribute
+                        List<Tile> new_enemies = new List<Tile>();
+                        List<int> offsets = new List<int>();
+
+                        Tile[] keys = new Tile[enemies_groups.Keys.Count];
+                        enemies_groups.Keys.CopyTo(keys, 0);
+                        foreach (Tile to_attribute in enemies_to_attribute)
+                        {
+                            try
+                            {
+                                bool found = false;
+                                int k = -1;
+                                while (!found && k < keys.Length)
+                                {
+                                    k = k + 1;
+                                    if (keys[k].Equals(to_attribute))
+                                    {
+                                        found = true;
+                                    }
+                                }
+                                int[] value_cast = (int[])enemies_groups[k];
+
+                                if (value_cast[0] >= target_tile.preys())
+                                {
+                                    new_enemies.Add(new Tile(value_cast[1], value_cast[2], 0, 0, true));
+                                    offsets.Add(value_cast[3]);
+                                }
+                                
+                            }
+                            catch
+                            {
+                                
+                            }
+                        }                        
+                        
+
+                        int d_min_enemies = distance_min(new_enemies, target_tile, offsets);
+                        int d = distance(fictive_allie, target_tile) + ((int[])allies_groups[allie])[3];
+
+                        if (d_min_enemies >= d)
+                        {
+
+                            //on attribue cette case d'humain a ce groupe d'allie, en ajoutant le nombre d'humains au
+                            //nombre de monstres, mais en ajoutant la distance qui sépare ce groupe de la case d'humains dans
+                            //le dictionnaire allies_groups
+                            ((int[])allies_groups[allie])[0] = ((int[])allies_groups[allie])[0] + target_tile.preys();
+                            ((int[])allies_groups[allie])[1] = target_tile.coord_x;
+                            ((int[])allies_groups[allie])[2] = target_tile.coord_y;
+                            ((int[])allies_groups[allie])[3] = d;
+
+                            //on enlève cette case d'humains de la liste des cases disponibles pour les allies
+                            dispo_allies.RemoveAt(new_best_i);
+
+
+                            if (d_min_enemies > d)
+                            {
+                                //aucun groupe d'enemies ne peut attaquer cette case, donc on la retire aussi des cases dispo
+                                //pour les ennemis
+                                int index_to_remove = -1;
+                                int j = 0;
+                                bool found = false;
+                                while (!found && j < dispo_enemies.Count)
+                                {
+                                    if (dispo_enemies[j].Equals(target_tile))
+                                    {
+                                        index_to_remove = j;
+                                        found = true;
+                                    }
+                                    j++;
+                                }
+
+                                if (index_to_remove != -1)
+                                {
+                                    dispo_enemies.RemoveAt(index_to_remove);
+                                }
+                            }
+                        }
+
+                        else
+                        {
+                            allPossibleAlliesAffected = false;
+                        }
+                    }
+
+
+
+
+                }
+
+                if (allPossibleAlliesAffected)
+                {
+                    //Si toutes les cases d'allies ont été affectées à un groupe d'humains, on vérifie qu'il n'y ait pas 
+                    //de groupe encore disponible pour les allies et plus pour l'adversaire, car cela voudrait dire que ce groupe aurait été
+                    //laissé comme disponible au tour d'attribution précédent de l'adversaire, mais qu'au final l'adversaire ne l'a pas attaquee
+                    List<int> indexes_to_delete = new List<int>();
+                    for (int index_allie = 0; index_allie < dispo_allies.Count; index_allie++)
+                    {
+                        bool found = false;
+                        int index_enemie = 0;
+                        while (!found && index_enemie < dispo_enemies.Count)
+                        {
+                            if (dispo_allies[index_allie].Equals(dispo_enemies[index_enemie]))
+                            {
+                                found = true;
+                            }
+                            index_enemie++;
+                        }
+
+                        if (!found)
+                        {
+                            indexes_to_delete.Add(index_allie);
+                        }
+                    }
+
+                    int decalage = 0;
+                    foreach (int ind in indexes_to_delete)
+                    {
+                        dispo_allies.RemoveAt(ind - decalage);
+                        decalage++;
+                    }
+                }
+
+
+                //on va parcourir les tiles d'enemies de la moins peuplée à la plus peuplée
+
+                bool allPossibleEnemiesAffected = true;
+
+                foreach (Tile enemie in enemies_groups.Keys)
+                {
+
+                    //On cherche la meilleure Tile attaquable par ce groupe
+                    Tile fictive_enemie = new Tile(((int[])enemies_groups[enemie])[1], ((int[])enemies_groups[enemie])[2], 0, 0, false);
+                    int best_i = -1;
+                    int i = 0;
+                    bool keepLooking = true;
+                    bool max_found = false;
+                    int dist = 1000;
+                    int max = 0;
+                    while (keepLooking && i < dispo_enemies.Count)
+                    {
+                        if (dispo_enemies[i].preys() <= ((int[])enemies_groups[enemie])[0])
+                        {
+                            if (!max_found)
+                            {
+                                max = dispo_enemies[i].preys();
+                                max_found = true;
+                            }
+
+                            if (dispo_enemies[i].preys() == max)
+                            {
+                                if (distance(dispo_enemies[i], fictive_enemie) < dist)
+                                {
+                                    dist = distance(dispo_enemies[i], fictive_enemie);
+                                    best_i = i;
+                                }
+
+                                i++;
+                            }
+                            else
+                            {
+                                keepLooking = false;
+                            }
+
+                        }
+
+                        else
+                        {
+                            i++;
+                        }
+                    }
+
+                    if (best_i == -1)
+                    {
+                        //cela veut dire qu'il n'y a plus de tile d'humains attaquable par ce groupe
+                        //on va retirer la Tile en question de la liste des groupes à associer à une case d'humains
+                        int index_to_remove = -1;
+                        int j = 0;
+                        bool found = false;
+                        while (!found && j < enemies_to_attribute.Count)
+                        {
+                            if (enemies_to_attribute[j].coord_x == enemie.coord_x && enemies_to_attribute[j].coord_y == enemie.coord_y)
+                            {
+                                index_to_remove = j;
+                                found = true;
+                            }
+                            j++;
+                        }
+
+                        if (index_to_remove != -1)
+                        {
+                            enemies_to_attribute.RemoveAt(index_to_remove);
+                        }
+                    }
+
+                    else
+                    {
+                        //il y a une case attaquable par ce groupe d'enemies
+
+                        //on vérifie d'abord s'il n'y a pas un groupe d'humains à attaquer sur le chemin vers la tuile désignée par best_i
+                        Tile target_tile = dispo_enemies[best_i];
+                        int max_bis = 0;
+                        int new_best_i = best_i;
+                        for (int index = 0; index < dispo_enemies.Count; index ++)
+                        {
+                            Tile t = dispo_enemies[index];
+                            if (!(t.coord_x == fictive_enemie.coord_x && t.coord_y == fictive_enemie.coord_y) && !(t.Equals(dispo_enemies[best_i])))
+                            {
+                                if (is_between(t, fictive_enemie, dispo_enemies[best_i]) && t.preys() > max_bis)
+                                {
+                                    target_tile = t;
+                                    max_bis = t.preys();
+                                    new_best_i = index;
+                                }
+                            }
+                        }
+
+                        //on récupère les coordonnées fictives actuelles et les distances fictives des groupes encore dans enemies_to_attribute
+                        List<Tile> new_allies = new List<Tile>();
+                        List<int> offsets = new List<int>();
+
+                        Tile[] keys = new Tile[allies_groups.Keys.Count];
+                        allies_groups.Keys.CopyTo(keys, 0);
+                        foreach (Tile to_attribute in allies_to_attribute)
+                        {
+                            try
+                            {
+                                bool found = false;
+                                int k = -1;
+                                while (!found && k < keys.Length)
+                                {
+                                    k = k + 1;
+                                    if (keys[k].Equals(to_attribute))
+                                    {
+                                        found = true;
+                                    }
+                                }
+                                int[] value_cast = (int[])allies_groups[k];
+
+                                if (value_cast[0] >= target_tile.preys())
+                                {
+                                    new_allies.Add(new Tile(value_cast[1], value_cast[2], 0, 0, true));
+                                    offsets.Add(value_cast[3]);
+                                }
+                            }
+                            catch { }
+                        }
+
+
+                        int d_min_allies = distance_min(new_allies, target_tile, offsets);
+                        int d = distance(fictive_enemie, target_tile) + ((int[])enemies_groups[enemie])[3];
+
+                        if (d_min_allies >= d)
+                        {
+
+                            //on attribue cette case d'humain a ce groupe d'enemie, en ajoutant le nombre d'humains au
+                            //nombre de monstres, mais en ajoutant la distance qui sépare ce groupe de la case d'humains dans
+                            //le dictionnaire enemies_groups
+                            ((int[])enemies_groups[enemie])[0] = ((int[])enemies_groups[enemie])[0] + target_tile.preys();
+                            ((int[])enemies_groups[enemie])[1] = target_tile.coord_x;
+                            ((int[])enemies_groups[enemie])[2] = target_tile.coord_y;
+                            ((int[])enemies_groups[enemie])[3] = d;
+
+                            //on enlève cette case d'humains de la liste des cases disponibles pour les enemies
+                            dispo_enemies.RemoveAt(new_best_i);
+
+
+                            if (d_min_allies > d)
+                            {
+                                //aucun groupe d'allies ne peut attaquer cette case, donc on la retire aussi des cases dispo
+                                //pour les ennemis
+                                int index_to_remove = -1;
+                                int j = 0;
+                                bool found = false;
+                                while (!found && j < dispo_allies.Count)
+                                {
+                                    if (dispo_allies[j].Equals(target_tile))
+                                    {
+                                        index_to_remove = j;
+                                        found = true;
+                                    }
+                                    j++;
+                                }
+
+                                if (index_to_remove != -1)
+                                {
+                                    dispo_allies.RemoveAt(index_to_remove);
+                                }
+
+                            }
+                        }
+
+                        else
+                        {
+                            allPossibleEnemiesAffected = false;
+                        }
+                    }
+
+                }
+
+                if (allPossibleEnemiesAffected)
+                {
+                    //Si toutes les cases d'enemies ont été affectées à un groupe d'humains, on vérifie qu'il n'y ait pas 
+                    //de groupe encore disponible pour les enemies et plus pour l'adversaire, car cela voudrait dire que ce groupe aurait été
+                    //laissé comme disponible au tour d'attribution précédent de l'adversaire, mais qu'au final l'adversaire ne l'a pas attaquee
+                    List<int> indexes_to_delete = new List<int>();
+                    for (int index_enemie = 0; index_enemie < dispo_enemies.Count; index_enemie++)
+                    {
+                        bool found = false;
+                        int index_allie = 0;
+                        while (!found && index_allie < dispo_allies.Count)
+                        {
+                            if (dispo_enemies[index_enemie].Equals(dispo_allies[index_allie]))
+                            {
+                                found = true;
+                            }
+                            index_allie++;
+                        }
+
+                        if (!found)
+                        {
+                            indexes_to_delete.Add(index_enemie);
+                        }
+                    }
+
+                    int decalage = 0;
+                    foreach (int ind in indexes_to_delete)
+                    {
+                        dispo_enemies.RemoveAt(ind - decalage);
+                        decalage++;
+                    }
+                }
+
+            }
+
+            //Affichage du contenu des dictionnaires et calcul final de la valeur à renvoyer
+            Console.WriteLine("Dictionnaire allies :");
+            double res = 0.0;
+            int n_gr_allies = 0;
+            int n_gr_enemies = 0;
+            int c = 0;
+            int total_dist = 0;
+            Tile previous_group = new Tile(0, 0, 0, 0, false);
+            foreach (Tile t in allies_groups.Keys)
+            {
+                Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
+
+                //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
+                n_gr_allies++;
+                if (c>0)
+                {
+                    total_dist += distance(previous_group, t);
+                }
+
+                c++;
+                previous_group = t;
+
+                //on met à jour res
+                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.75 + 1.0 / (((int[])allies_groups[t])[3] + 4));
+            }
+
+            //Une fois qu'on a la distance totale, on ajoute à res le terme qui représente la distance entre les groupes
+            res = res + (double)(1 / n_gr_allies);
+            if (n_gr_allies > 1)
+            {
+                res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
+            }
+
+            Console.WriteLine("");
+
+            c = 0;
+            total_dist = 0;
+            Console.WriteLine("Dictionnaire enemies :");
+
+            foreach (Tile t in enemies_groups.Keys)
+            {
+                Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
+
+                //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
+                n_gr_enemies++;
+                if (c > 0)
+                {
+                    total_dist += distance(previous_group, t);
+                }
+
+                c++;
+                previous_group = t;
+
+                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.75 + 1.0 / (((int[])enemies_groups[t])[3] + 4));
+            }
+
+            //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes
+            res = res - 1.0 / n_gr_enemies;
+            if (n_gr_enemies > 1)
+            {
+                res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
+            }
+
+            Console.WriteLine("");
+
+            
+            //On retourne la différence (nombre final + gain potentiel * (0.75 + 1/(distance + 4))allies - (nombre final + gain potentiel * (0.75 + 1/(distance + 4))ennemis
+            return res;
+        }
+
+        public int distance_min(List<Tile> monsters_groups, Tile target_Tile, List<int> offsets = null)
+        {
+            //calcule la distance minimum entre une case cible et un ensemble de cases de monstres, avec éventuellement
+            //des offsets affectés à chaque case de monstre
+
+            int min = 10000;
+            for (int i = 0; i < monsters_groups.Count; i++)
+            {
+                Tile group = monsters_groups[i];
+                if (offsets == null)
+                {
+                    min = Math.Min(distance(group, target_Tile), min);
+                }
+                else
+                {
+                    min = Math.Min(distance(group, target_Tile) + offsets[i], min);
+                }
+            }
+            return min;
+        }
+
+        public bool is_between(Tile middle_tile, Tile start_Tile, Tile end_Tile)
+        {
+            return distance(start_Tile, middle_tile) + distance(middle_tile, end_Tile) == distance(start_Tile, end_Tile);
+        }
+
+        private double heuristique_1(bool enemy, double seuil_proba, int mode)
         {
 
             double result = 0;
@@ -214,7 +897,7 @@ namespace DeepWerewolf
                             if (mode == 1)
                             {
                                 int[] res = resultat_attaque(t, group, seuil_proba);
-                                max = Math.Max((double)(res[1] - res[0]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
+                                max = Math.Max((double)(res[0] - res[1]) / distance(t, group), max); //on calcule (resultat(allies) - resultat(ennemis))/distance
                             }
 
                             else
@@ -226,6 +909,7 @@ namespace DeepWerewolf
                         result = result + max;
                     }
                 }
+                
             }
 
             return result;
