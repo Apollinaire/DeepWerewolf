@@ -587,9 +587,9 @@ namespace DeepWerewolf
             //}
 
             var moves = new List<int[]>();
-            moves.Add(new int[5] { 4, 3, 3, 2, 2 });
+            moves.Add(new int[5] { 4, 1, 3, 4, 3 });
             myGame.currentMap.interprete_moves(moves);
-            Console.WriteLine(myGame.currentMap.getTile(2, 2).preys());
+            Console.WriteLine(myGame.currentMap.getTile(4, 3).allies());
 
         }
     }
