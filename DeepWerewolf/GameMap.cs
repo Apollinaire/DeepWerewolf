@@ -110,7 +110,7 @@ namespace DeepWerewolf
                         this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, defenderSurvival);
                     }
                     // A la fin, on déplace les alliés de la case départ
-                    this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.allies() - table[2], false);
+                    this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
                 }
                 else
                 {
