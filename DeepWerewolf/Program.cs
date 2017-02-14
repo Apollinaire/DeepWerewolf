@@ -425,6 +425,8 @@ namespace DeepWerewolf
 
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
+            List<int[]> movements = calcul_meilleur_coup(2);
+            send_MOV_frame(movements.Count, movements);
 
 
         }
@@ -587,9 +589,9 @@ namespace DeepWerewolf
             //}
 
             var moves = new List<int[]>();
-            moves.Add(new int[5] { 4, 1, 3, 4, 3 });
+            moves.Add(new int[5] { 4, 3, 3, 4, 1 });
             myGame.currentMap.interprete_moves(moves);
-            Console.WriteLine(myGame.currentMap.getTile(4, 3).allies());
+            Console.WriteLine(myGame.currentMap.getTile(4, 1).enemies());
 
         }
     }
