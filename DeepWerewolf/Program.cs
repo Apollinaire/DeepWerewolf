@@ -407,7 +407,6 @@ namespace DeepWerewolf
                                 move[3] = move[0] + 1;
                                 move[4] = move[1] + 1;
                                 break;
-
                         }
                     }
                 }
