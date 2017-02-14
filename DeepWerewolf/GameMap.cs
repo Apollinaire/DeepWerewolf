@@ -38,8 +38,15 @@ namespace DeepWerewolf
         {
             size_x = X;
             size_y = Y;
-            tuiles = T;
-            startTile = start_Tile;
+            tuiles = new Tile[size_y, size_x];
+            for (int i=0; i<size_y; i++)
+            {
+                for (int j=0; j<size_x; j++)
+                {
+                    setTile(i, j, T[i, j].preys(), T[i, j].monstres.number, T[i, j].monstres.isEnemy);
+                }
+            }
+            setStartTile(start_Tile.coord_x, start_Tile.coord_y);
         }
 
         public Tile getTile(int abscisse, int ordonnee)
@@ -131,6 +138,7 @@ namespace DeepWerewolf
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
         {
+            Console.WriteLine("Starting calculate_group_moves...");
             //Renvoie un objet List< List < int[ ] >> qui représente toutes les actions possibles pour un groupe présent sur la Tile passée en paramètre.
             List<List<int[]>> res = new List<List<int[]>>();
             int number = group_Tile.monstres.number;
@@ -140,7 +148,7 @@ namespace DeepWerewolf
                 {
                     for (int y = -1; y <= 1; y++)
                     {
-                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, group_Tile.coord_x + x, group_Tile.coord_y + y }; 
+                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, Math.Min(Math.Max(0, group_Tile.coord_x + x), size_y - 1), Math.Min(Math.Max(0, group_Tile.coord_y + y), size_x - 1) }; 
                             res.Add(new List<int[]>() { move});
                     }
                 }
@@ -173,13 +181,14 @@ namespace DeepWerewolf
 
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
+            Console.WriteLine("Starting calculate_moves...");
             List<List<int[]>> res = new List<List<int[]>>();
 
-            foreach (var Tuile in tuiles)
+            foreach (Tile Tuile in tuiles)
             {
-                if (Tuile != null)
+                if (Tuile.preys() == 0)
                 {
-                    if(Tuile.monstres.isEnemy & enemy) //vrai si la tuile est du meme type que le type demandé
+                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé
                     {
                         res.AddRange(calculate_group_moves(Tuile, split));
                     }
@@ -207,7 +216,7 @@ namespace DeepWerewolf
         public double heuristique_2()
         {
             //Cette fonction va attribuer à chaque groupe de monstres le ou les groupes d'humains qu'il peut convertir
-
+            Console.WriteLine("Starting heuristique_2...");
             //On commence par repérer les groupes d'alliés et d'ennemis
             List<Tile> allies_to_attribute = new List<Tile>();
             List<Tile> enemies_to_attribute = new List<Tile>();
@@ -817,7 +826,12 @@ namespace DeepWerewolf
             }
 
             //Une fois qu'on a la distance totale, on ajoute à res le terme qui représente la distance entre les groupes
-            res = res + (double)(1 / n_gr_allies);
+            if (n_gr_allies > 0)
+            {
+                res = res + (double)(1 / n_gr_allies);
+            }
+
+
             if (n_gr_allies > 1)
             {
                 res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
@@ -847,7 +861,11 @@ namespace DeepWerewolf
             }
 
             //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes
-            res = res - 1.0 / n_gr_enemies;
+            if (n_gr_enemies > 0)
+            {
+                res = res - 1.0 / n_gr_enemies;
+            }
+           
             if (n_gr_enemies > 1)
             {
                 res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
@@ -1244,8 +1262,8 @@ namespace DeepWerewolf
 
                 if (Tuile_Attaquee.allies() > 0)
                 {
-                    //on attaque une case où il y a des congénères, donc il n'en résulte aucune modification
-                    return new int[3] { 0, 0, 0 };
+                    //on attaque une case où il y a des congénères, donc le nombre d'allies sur la case d'arrivée augmente
+                    return new int[3] { Tuile_Source.allies(), 0, 0 };
                 }
 
                 else if (Tuile_Attaquee.enemies() > 0)
@@ -1358,7 +1376,7 @@ namespace DeepWerewolf
                 if (Tuile_Attaquee.enemies() > 0)
                 {
                     //les ennemis attaquent une case où il y a leurs congénères, donc il n'en résulte aucune modification dans le nombre d'ennemis
-                    return new int[3] { 0, 0, 0 };
+                    return new int[3] { 0, Tuile_Source.enemies(), 0 };
                 }
 
                 else if (Tuile_Attaquee.allies() > 0)

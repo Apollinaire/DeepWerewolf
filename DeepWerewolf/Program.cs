@@ -425,6 +425,7 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
             List<int[]> movements = calcul_meilleur_coup(2);
+            Thread.Sleep(5000);
             send_MOV_frame(movements.Count, movements);
 
 
@@ -457,6 +458,7 @@ namespace DeepWerewolf
             }
 
 
+            
             return move_to_do;
         }
 
@@ -476,8 +478,8 @@ namespace DeepWerewolf
                 double tmp;
                 foreach (List<int[]> move in possibleMoves)
                 {
-                    MapATester.interprete_moves(move);
-                    tmp = calcul_Min(MapATester, profondeur - 1);
+                    GameMap newMap = MapATester.interprete_moves(move);
+                    tmp = calcul_Min(newMap, profondeur - 1);
                     if (tmp > max)
                     {
                         max = tmp;
@@ -495,6 +497,7 @@ namespace DeepWerewolf
 
         public double calcul_Min(GameMap MapATester, int profondeur)
         {
+            Console.WriteLine("Starting calculMin...");
             if (profondeur == 0)
             {
                 //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
@@ -507,9 +510,9 @@ namespace DeepWerewolf
                 double tmp;
                 foreach (List<int[]> move in possibleMoves)
                 {
-                    MapATester.interprete_moves(move);
+                    GameMap newMap = MapATester.interprete_moves(move);
                     int pro = profondeur-1;
-                    tmp = calcul_Max(MapATester, profondeur - 1);
+                    tmp = calcul_Max(newMap, profondeur - 1);
                     if (tmp < min)
                     {
                         min = tmp;
@@ -531,7 +534,8 @@ namespace DeepWerewolf
         {
             Program myGame = new Program();
             myGame.initConnection(myGame.serverIP, myGame.serverPort);
-
+            GameMap new_map = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 4, 4, 3 } });
+            Console.WriteLine("Allies en ({0}, {1}) sur currentMap : {2}\nAllies en ({0}, {1}) sur newMap : {3}", 4, 3, myGame.currentMap.getTile(4, 3).allies(), new_map.getTile(4, 3).allies());
             //Tile t1 = new Tile(1, 1, 4, 0, false);
             //Tile t2 = new Tile(1, 1, 4, 0, false);
             ////Console.WriteLine(t1.Equals(t2));
