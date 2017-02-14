@@ -77,6 +77,42 @@ namespace DeepWerewolf
 
         }
 
+        public bool is_valid_move(GameMap map,List<int[]> moves)
+        {
+            if (moves.Count == 0)
+            {
+                return false; // Il faut qu'il y ait un mouvement
+            }
+            List<Tile> destinationTiles = new List<Tile>();
+            List<Tile> sourceTiles = new List<Tile>();
+            foreach (int[] move in moves)
+            {
+                Tile sourceTile = map.getTile(move[0], move[1]);
+                Tile destinationTile = map.getTile(move[3], move[4]);
+                if (sourceTile.preys() != 0 || sourceTile.monstres.number < move[2])
+                {
+                    return false; // Il ne faut pas qu'il y ait d'humains dans la tuile ou que la demande dépasse le nb de pions disponibles
+                }
+                if (move[2] == 0)
+                {
+                    return false; // Il faut au moins bouger un pion
+                }
+                sourceTiles.Add(sourceTile);
+                destinationTiles.Add(destinationTile);
+            }
+            foreach (Tile source in sourceTiles)
+            {
+                foreach (Tile destination in destinationTiles)
+                {
+                    if (destination == source)
+                    {
+                        return false; // Une tuile ne doit pas être source et destination d'un mouvement à la fois
+                    }
+                }
+            }
+            return true;
+        }
+
         public GameMap interprete_moves(List<int[]> moves)
         {
             GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
@@ -84,48 +120,42 @@ namespace DeepWerewolf
             foreach (int[] table in moves)
             {
                 Tile sourceTile = newMap.getTile(table[0], table[1]);
-                if (sourceTile.preys() ==0 && sourceTile.monstres.number >= table[2])
+                Tile destination = newMap.getTile(table[3], table[4]);
+                bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
+                int monstersAtDestination;
+                int opposedForcesAtDestination;
+                if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
                 {
-                    Tile destination = newMap.getTile(table[3], table[4]);
-                    bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
-                    int monstersAtDestination;
-                    int opposedForcesAtDestination;
-                    if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
-                    {
-                        enemyMove = false; // C'est nous qui jouons
-                        monstersAtDestination = destination.allies();
-                        opposedForcesAtDestination = destination.enemies();
-                    }
-                    else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
-                    {
-                        enemyMove = true; // C'est l'ennemi qui joue
-                        monstersAtDestination = destination.enemies();
-                        opposedForcesAtDestination = destination.allies();
-                    }
-                    if (opposedForcesAtDestination == 0 && destination.preys() == 0)
-                    {
-                        // Il ne s'agit pas d'une attaque
-                        newMap.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
-                    }
-                    else
-                    {
-                        // Il s'agit d'une attaque
-                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
-                        int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
-                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
-                        bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
-                        int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
-                        newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
-                    }
-                    // A la fin, on déplace les alliés de la case départ
-                    newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
+                    enemyMove = false; // C'est nous qui jouons
+                    monstersAtDestination = destination.allies();
+                    opposedForcesAtDestination = destination.enemies();
+                }
+                else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
+                {
+                    enemyMove = true; // C'est l'ennemi qui joue
+                    monstersAtDestination = destination.enemies();
+                    opposedForcesAtDestination = destination.allies();
+                }
+                if (opposedForcesAtDestination == 0 && destination.preys() == 0)
+                {
+                    // Il ne s'agit pas d'une attaque
+                    newMap.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
                 }
                 else
                 {
-                    Console.WriteLine("Wrong sourceTile entered");
+                    // Il s'agit d'une attaque
+                    Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
+                    int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
+                    int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
+                    int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
+                    bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
+                    int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
+                    newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
                 }
+                // A la fin, on déplace les alliés de la case départ
+                newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
             }
+            // Si le mouvement n'est pas valide, on ne le traite pas
             return newMap;
         }
 
