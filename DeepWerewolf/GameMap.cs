@@ -34,6 +34,14 @@ namespace DeepWerewolf
             startTile = tuiles[0, 0];
         }
 
+        public GameMap (int X, int Y, Tile[,] T, Tile start_Tile)
+        {
+            size_x = X;
+            size_y = Y;
+            tuiles = T;
+            startTile = start_Tile;
+        }
+
         public Tile getTile(int abscisse, int ordonnee)
         {
             return tuiles[abscisse, ordonnee];
@@ -71,13 +79,14 @@ namespace DeepWerewolf
 
         public GameMap interprete_moves(List<int[]> moves)
         {
+            GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
             //Renvoie un objet GameMap qui applique les mouvements représentés par moves sur l’objet GameMap qui appelle la fonction.
             foreach (int[] table in moves)
             {
-                Tile sourceTile = this.getTile(table[0], table[1]);
+                Tile sourceTile = newMap.getTile(table[0], table[1]);
                 if (sourceTile.preys() ==0 && sourceTile.monstres.number >= table[2])
                 {
-                    Tile destination = this.getTile(table[3], table[4]);
+                    Tile destination = newMap.getTile(table[3], table[4]);
                     bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
                     int monstersAtDestination;
                     int opposedForcesAtDestination;
@@ -96,7 +105,7 @@ namespace DeepWerewolf
                     if (opposedForcesAtDestination == 0 && destination.preys() == 0)
                     {
                         // Il ne s'agit pas d'une attaque
-                        this.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
+                        newMap.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
                     }
                     else
                     {
@@ -107,17 +116,17 @@ namespace DeepWerewolf
                         int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
                         bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
                         int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
-                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
+                        newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
                     }
                     // A la fin, on déplace les alliés de la case départ
-                    this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
+                    newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
                 }
                 else
                 {
                     Console.WriteLine("Wrong sourceTile entered");
                 }
             }
-            return this;
+            return newMap;
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
@@ -188,6 +197,11 @@ namespace DeepWerewolf
             //Mode = 2 pour esperance_attaque
 
             return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
+        }
+
+        public double oracle()
+        {
+            return heuristique_2();
         }
 
         public double heuristique_2()
