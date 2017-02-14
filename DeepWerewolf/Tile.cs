@@ -10,8 +10,8 @@ namespace DeepWerewolf
     {
         public int coord_x { get; private set; }
         public int coord_y { get; private set; }
-        public Humans humains { get; private set; }
-        public Monsters monstres { get; private set; }
+        public Humans humains { get; set; }
+        public Monsters monstres { get; set; }
 
         public Tile(int x, int y, Humans h, Monsters m)
         {
@@ -60,6 +60,17 @@ namespace DeepWerewolf
         public int preys()
         {
             return humains.number;
+        }
+
+        public override bool Equals(object obj)
+        {
+            Tile t = (Tile)obj;
+            return t.coord_x == coord_x && t.coord_y == coord_y && t.allies() == allies() && t.enemies() == enemies() && t.preys() == preys();
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
         }
     }
 }
