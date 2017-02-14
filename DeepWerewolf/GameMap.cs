@@ -103,22 +103,63 @@ namespace DeepWerewolf
             return this;
         }
 
-        public List<List<int[]>> calculate_group_moves(Tile group_Tile)
+        public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
         {
             //Renvoie un objet List< List < int[ ] >> qui représente toutes les actions possibles pour un groupe présent sur la Tile passée en paramètre.
+            List<List<int[]>> res = new List<List<int[]>>();
+            int number = group_Tile.monstres.number;
+            if(number>=1)
+            {
+                for (int x = -1; x <= 1; x++) //d'abord les actions sans split
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, group_Tile.coord_x + x, group_Tile.coord_y + y }; 
+                            res.Add(new List<int[]>() { move});
+                    }
+                }
+                if (split & number>1) //ensuite avec split
+                {
+                    List<int[]> action = new List<int[]>();
+                    for (int i= 2; i <= number; i++) //nombre de splits du move
+                    {
+                        for (int j = 0; j < i; j++) //pour chaque split
+                        {
 
-            return new List<List<int[]>>();
+                        }
+
+                    }
+                }
+            }
+            
+            return res;
         }
 
-        public List<List<int[]>> calculate_moves(bool enemy)
+        public List<List<int[]>> calculate_moves(bool enemy, bool split)
         {
-            //Renvoie un objet List< List < int[ ] >> qui est la liste des actions possibles sur une map pour nous si enemy est false, et pour l’adversaire si enemy est True.Une action est un élément du type List< int[5] > où chaque tableau d’int représente un move (x_depart, y_depart, nb_monstres, x_arrivee, y_arrivee).Une action peut avoir plusieurs moves, c’est pour ça qu’une action est représentée par une liste de tableaux d’int.
+            //Renvoie un objet List< List < int[ ] >> qui est la liste des actions possibles sur une map pour nous si enemy est false, et pour l’adversaire si enemy
+            //est True.Une action est un élément du type List< int[5] > où chaque tableau d’int représente un move (x_depart, y_depart, nb_monstres, x_arrivee,
+            //y_arrivee).Une action peut avoir plusieurs moves, c’est pour ça qu’une action est représentée par une liste de tableaux d’int.
 
-            //Résumé : Trouve tous les groupes (d’alliés si enemy est false, et d’ennemis si enemy est True) et fait appel à calculate_group_moves() sur chaque groupe pour calculer la liste de toutes les actions possibles pour chaque groupe, et combine ensuite toutes ces actions pour donner la liste de toutes les actions possibles à l’échelle du plateau.
+            //Résumé : Trouve tous les groupes (d’alliés si enemy est false, et d’ennemis si enemy est True) et fait appel à calculate_group_moves() sur chaque groupe pour 
+            //calculer la liste de toutes les actions possibles pour chaque groupe, et combine ensuite toutes ces actions pour donner la liste de toutes les
+            //actions possibles à l’échelle du plateau.
 
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
-            return new List<List<int[]>>();
+            List<List<int[]>> res = new List<List<int[]>>();
+
+            foreach (var Tuile in tuiles)
+            {
+                if (Tuile != null)
+                {
+                    if(Tuile.monstres.isEnemy & enemy) //vrai si la tuile est du meme type que le type demandé
+                    {
+                        res.AddRange(calculate_group_moves(Tuile, split));
+                    }
+                }
+            }
+            return res;
         }
 
 
