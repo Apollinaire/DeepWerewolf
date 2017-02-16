@@ -1341,7 +1341,10 @@ namespace DeepWerewolf
                             {
                                 
                                 proba_total += (1 - p) * coeff_bin(deltaN_ennemis + E2, E2) * Math.Pow(1 - p, deltaN_ennemis + E2) * Math.Pow(p, -deltaN_ennemis);
-                                deltaN_ennemis++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_ennemis++;
+                                }
                             }
                         }
 
@@ -1391,7 +1394,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_humains + E2, E2) * Math.Pow(1 - p, deltaN_humains + E2) * Math.Pow(p, -deltaN_humains);
-                                deltaN_humains++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_humains++;
+                                }
                             }
                         }
 
@@ -1454,7 +1460,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_allies + E2, E2) * Math.Pow(1 - p, deltaN_allies + E2) * Math.Pow(p, -deltaN_allies);
-                                deltaN_allies++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_allies++;
+                                }
                             }
                         }
 
@@ -1503,7 +1512,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_humains + E2, E2) * Math.Pow(1 - p, deltaN_humains + E2) * Math.Pow(p, -deltaN_humains);
-                                deltaN_humains++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_humains++;
+                                }
                             }
                         }
 
@@ -1516,22 +1528,30 @@ namespace DeepWerewolf
             return new int[3] { 0, 0, 0 };
         }
 
-
-        public int factorielle(int n)
+        public double coeff_bin(int p, int n)
         {
-            int result = 1;
-            int i = 1;
-            while (i <= n)
+            int local_p = Math.Min(p, n - p);
+
+            if (local_p == 0)
             {
-                result = result * i;
-                i++;
+                return 1;
             }
-            return result;
-        }
 
-        public int coeff_bin(int p, int n)
-        {
-            return factorielle(n) / (factorielle(p) * factorielle(n - p));
+            if (local_p == 1)
+            {
+                return n;
+            }
+
+
+            double res = n;
+
+            for (int i = 1; i < local_p; i++)
+            {
+                res = res * (n - i);
+                res = res / (i + 1);
+            }
+
+            return res;
         }
     }
 }
