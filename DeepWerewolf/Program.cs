@@ -455,7 +455,7 @@ namespace DeepWerewolf
             //L’objet List< int[] > à renvoyer est le coup qui réalise ce maximum
 
             //Remarque: S’inspire de IA_jouer du cours Open Classroom
-            List<List<int[]>> moves = currentMap.calculate_moves(false, false);
+            List<List<int[]>> moves = currentMap.calculate_moves(false);
             double max = -1000.0;
             List<int[]> move_to_do = new List<int[]>();
             foreach (List<int[]> move in moves)
@@ -487,7 +487,7 @@ namespace DeepWerewolf
             }
             else
             {
-                List<List<int[]>> possibleMoves = MapATester.calculate_moves(false, false);
+                List<List<int[]>> possibleMoves = MapATester.calculate_moves(false);
                 double max = -10000; //Valeur initiale très basse pour min
                 double tmp;
                 foreach (List<int[]> move in possibleMoves)
@@ -519,7 +519,7 @@ namespace DeepWerewolf
             }
             else
             {
-                List<List<int[]>> possibleMoves = MapATester.calculate_moves(true, false);
+                List<List<int[]>> possibleMoves = MapATester.calculate_moves(true);
                 double min = 10000; //Valeur initiale très élevée pour min
                 double tmp;
                 foreach (List<int[]> move in possibleMoves)

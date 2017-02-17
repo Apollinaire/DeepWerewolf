@@ -166,6 +166,19 @@ namespace DeepWerewolf
             return newMap;
         }
 
+        public bool consider_split(Tile tuile)
+        {   
+            // Renvoie un booléen qui nous indique s'il est pertinent de séparer deux groupes
+            foreach (Tile tuileVoisin in this.tuiles)
+            {
+                if (distance(tuile, tuileVoisin) <= 3 && tuileVoisin.preys() != 0 && tuileVoisin.preys() <= tuile.monstres.number/2)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
         {
             Console.WriteLine("Starting calculate_group_moves...");
@@ -199,7 +212,7 @@ namespace DeepWerewolf
             return res;
         }
 
-        public List<List<int[]>> calculate_moves(bool enemy, bool split)
+        public List<List<int[]>> calculate_moves(bool enemy)
         {
             //Renvoie un objet List< List < int[ ] >> qui est la liste des actions possibles sur une map pour nous si enemy est false, et pour l’adversaire si enemy
             //est True.Une action est un élément du type List< int[5] > où chaque tableau d’int représente un move (x_depart, y_depart, nb_monstres, x_arrivee,
@@ -220,7 +233,7 @@ namespace DeepWerewolf
                 {
                     if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé
                     {
-                        res.AddRange(calculate_group_moves(Tuile, split));
+                        res.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
                     }
                 }
             }
