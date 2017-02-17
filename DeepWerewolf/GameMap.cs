@@ -34,6 +34,21 @@ namespace DeepWerewolf
             startTile = tuiles[0, 0];
         }
 
+        public GameMap (int X, int Y, Tile[,] T, Tile start_Tile)
+        {
+            size_x = X;
+            size_y = Y;
+            tuiles = new Tile[size_y, size_x];
+            for (int i=0; i<size_y; i++)
+            {
+                for (int j=0; j<size_x; j++)
+                {
+                    setTile(i, j, T[i, j].preys(), T[i, j].monstres.number, T[i, j].monstres.isEnemy);
+                }
+            }
+            setStartTile(start_Tile.coord_x, start_Tile.coord_y);
+        }
+
         public Tile getTile(int abscisse, int ordonnee)
         {
             return tuiles[abscisse, ordonnee];
@@ -69,59 +84,91 @@ namespace DeepWerewolf
 
         }
 
+        public bool is_valid_move(GameMap map,List<int[]> moves)
+        {
+            if (moves.Count == 0)
+            {
+                return false; // Il faut qu'il y ait un mouvement
+            }
+            List<Tile> destinationTiles = new List<Tile>();
+            List<Tile> sourceTiles = new List<Tile>();
+            foreach (int[] move in moves)
+            {
+                Tile sourceTile = map.getTile(move[0], move[1]);
+                Tile destinationTile = map.getTile(move[3], move[4]);
+                if (sourceTile.preys() != 0 || sourceTile.monstres.number < move[2])
+                {
+                    return false; // Il ne faut pas qu'il y ait d'humains dans la tuile ou que la demande dépasse le nb de pions disponibles
+                }
+                if (move[2] == 0)
+                {
+                    return false; // Il faut au moins bouger un pion
+                }
+                sourceTiles.Add(sourceTile);
+                destinationTiles.Add(destinationTile);
+            }
+            foreach (Tile source in sourceTiles)
+            {
+                foreach (Tile destination in destinationTiles)
+                {
+                    if (destination == source)
+                    {
+                        return false; // Une tuile ne doit pas être source et destination d'un mouvement à la fois
+                    }
+                }
+            }
+            return true;
+        }
+
         public GameMap interprete_moves(List<int[]> moves)
         {
+            GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
             //Renvoie un objet GameMap qui applique les mouvements représentés par moves sur l’objet GameMap qui appelle la fonction.
             foreach (int[] table in moves)
             {
-                Tile sourceTile = this.getTile(table[0], table[1]);
-                if (sourceTile.preys() ==0 && sourceTile.monstres.number >= table[2])
+                Tile sourceTile = newMap.getTile(table[0], table[1]);
+                Tile destination = newMap.getTile(table[3], table[4]);
+                bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
+                int monstersAtDestination;
+                int opposedForcesAtDestination;
+                if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
                 {
-                    Tile destination = this.getTile(table[3], table[4]);
-                    bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
-                    int monstersAtDestination;
-                    int opposedForcesAtDestination;
-                    if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
-                    {
-                        enemyMove = false; // C'est nous qui jouons
-                        monstersAtDestination = destination.allies();
-                        opposedForcesAtDestination = destination.enemies();
-                    }
-                    else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
-                    {
-                        enemyMove = true; // C'est l'ennemi qui joue
-                        monstersAtDestination = destination.enemies();
-                        opposedForcesAtDestination = destination.allies();
-                    }
-                    if (opposedForcesAtDestination == 0 && destination.preys() == 0)
-                    {
-                        // Il ne s'agit pas d'une attaque
-                        this.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
-                    }
-                    else
-                    {
-                        // Il s'agit d'une attaque
-                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
-                        int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
-                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
-                        bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
-                        int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
-                        this.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
-                    }
-                    // A la fin, on déplace les alliés de la case départ
-                    this.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
+                    enemyMove = false; // C'est nous qui jouons
+                    monstersAtDestination = destination.allies();
+                    opposedForcesAtDestination = destination.enemies();
+                }
+                else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
+                {
+                    enemyMove = true; // C'est l'ennemi qui joue
+                    monstersAtDestination = destination.enemies();
+                    opposedForcesAtDestination = destination.allies();
+                }
+                if (opposedForcesAtDestination == 0 && destination.preys() == 0)
+                {
+                    // Il ne s'agit pas d'une attaque
+                    newMap.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
                 }
                 else
                 {
-                    Console.WriteLine("Wrong sourceTile entered");
+                    // Il s'agit d'une attaque
+                    Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
+                    int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
+                    int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
+                    int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
+                    bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
+                    int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
+                    newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
                 }
+                // A la fin, on déplace les alliés de la case départ
+                newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
             }
-            return this;
+            // Si le mouvement n'est pas valide, on ne le traite pas
+            return newMap;
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
         {
+            Console.WriteLine("Starting calculate_group_moves...");
             //Renvoie un objet List< List < int[ ] >> qui représente toutes les actions possibles pour un groupe présent sur la Tile passée en paramètre.
             List<List<int[]>> res = new List<List<int[]>>();
             int number = group_Tile.monstres.number;
@@ -131,7 +178,7 @@ namespace DeepWerewolf
                 {
                     for (int y = -1; y <= 1; y++)
                     {
-                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, group_Tile.coord_x + x, group_Tile.coord_y + y }; 
+                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, Math.Min(Math.Max(0, group_Tile.coord_x + x), size_y - 1), Math.Min(Math.Max(0, group_Tile.coord_y + y), size_x - 1) }; 
                             res.Add(new List<int[]>() { move});
                     }
                 }
@@ -164,13 +211,14 @@ namespace DeepWerewolf
 
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
+            Console.WriteLine("Starting calculate_moves...");
             List<List<int[]>> res = new List<List<int[]>>();
 
-            foreach (var Tuile in tuiles)
+            foreach (Tile Tuile in tuiles)
             {
-                if (Tuile != null)
+                if (Tuile.preys() == 0)
                 {
-                    if(Tuile.monstres.isEnemy & enemy) //vrai si la tuile est du meme type que le type demandé
+                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé
                     {
                         res.AddRange(calculate_group_moves(Tuile, split));
                     }
@@ -190,10 +238,15 @@ namespace DeepWerewolf
             return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
         }
 
+        public double oracle()
+        {
+            return heuristique_2();
+        }
+
         public double heuristique_2()
         {
             //Cette fonction va attribuer à chaque groupe de monstres le ou les groupes d'humains qu'il peut convertir
-
+            Console.WriteLine("Starting heuristique_2...");
             //On commence par repérer les groupes d'alliés et d'ennemis
             List<Tile> allies_to_attribute = new List<Tile>();
             List<Tile> enemies_to_attribute = new List<Tile>();
@@ -803,7 +856,12 @@ namespace DeepWerewolf
             }
 
             //Une fois qu'on a la distance totale, on ajoute à res le terme qui représente la distance entre les groupes
-            res = res + (double)(1 / n_gr_allies);
+            if (n_gr_allies > 0)
+            {
+                res = res + (double)(1 / n_gr_allies);
+            }
+
+
             if (n_gr_allies > 1)
             {
                 res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
@@ -833,7 +891,11 @@ namespace DeepWerewolf
             }
 
             //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes
-            res = res - 1.0 / n_gr_enemies;
+            if (n_gr_enemies > 0)
+            {
+                res = res - 1.0 / n_gr_enemies;
+            }
+           
             if (n_gr_enemies > 1)
             {
                 res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
@@ -1230,8 +1292,8 @@ namespace DeepWerewolf
 
                 if (Tuile_Attaquee.allies() > 0)
                 {
-                    //on attaque une case où il y a des congénères, donc il n'en résulte aucune modification
-                    return new int[3] { 0, 0, 0 };
+                    //on attaque une case où il y a des congénères, donc le nombre d'allies sur la case d'arrivée augmente
+                    return new int[3] { Tuile_Source.allies(), 0, 0 };
                 }
 
                 else if (Tuile_Attaquee.enemies() > 0)
@@ -1279,7 +1341,10 @@ namespace DeepWerewolf
                             {
                                 
                                 proba_total += (1 - p) * coeff_bin(deltaN_ennemis + E2, E2) * Math.Pow(1 - p, deltaN_ennemis + E2) * Math.Pow(p, -deltaN_ennemis);
-                                deltaN_ennemis++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_ennemis++;
+                                }
                             }
                         }
 
@@ -1329,7 +1394,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_humains + E2, E2) * Math.Pow(1 - p, deltaN_humains + E2) * Math.Pow(p, -deltaN_humains);
-                                deltaN_humains++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_humains++;
+                                }
                             }
                         }
 
@@ -1344,7 +1412,7 @@ namespace DeepWerewolf
                 if (Tuile_Attaquee.enemies() > 0)
                 {
                     //les ennemis attaquent une case où il y a leurs congénères, donc il n'en résulte aucune modification dans le nombre d'ennemis
-                    return new int[3] { 0, 0, 0 };
+                    return new int[3] { 0, Tuile_Source.enemies(), 0 };
                 }
 
                 else if (Tuile_Attaquee.allies() > 0)
@@ -1392,7 +1460,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_allies + E2, E2) * Math.Pow(1 - p, deltaN_allies + E2) * Math.Pow(p, -deltaN_allies);
-                                deltaN_allies++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_allies++;
+                                }
                             }
                         }
 
@@ -1441,7 +1512,10 @@ namespace DeepWerewolf
                             while (proba_total < seuil)
                             {
                                 proba_total += (1 - p) * coeff_bin(deltaN_humains + E2, E2) * Math.Pow(1 - p, deltaN_humains + E2) * Math.Pow(p, -deltaN_humains);
-                                deltaN_humains++;
+                                if (proba_total < seuil)
+                                {
+                                    deltaN_humains++;
+                                }
                             }
                         }
 
@@ -1454,22 +1528,30 @@ namespace DeepWerewolf
             return new int[3] { 0, 0, 0 };
         }
 
-
-        public int factorielle(int n)
+        public double coeff_bin(int p, int n)
         {
-            int result = 1;
-            int i = 1;
-            while (i <= n)
+            int local_p = Math.Min(p, n - p);
+
+            if (local_p == 0)
             {
-                result = result * i;
-                i++;
+                return 1;
             }
-            return result;
-        }
 
-        public int coeff_bin(int p, int n)
-        {
-            return factorielle(n) / (factorielle(p) * factorielle(n - p));
+            if (local_p == 1)
+            {
+                return n;
+            }
+
+
+            double res = n;
+
+            for (int i = 1; i < local_p; i++)
+            {
+                res = res * (n - i);
+                res = res / (i + 1);
+            }
+
+            return res;
         }
     }
 }
