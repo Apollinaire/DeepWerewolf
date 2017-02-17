@@ -19,6 +19,7 @@ namespace DeepWerewolf
         public GameMap currentMap { get; private set; }
         public string espece { get; private set; }
         public bool isPlaying { get; set; }
+        public int time_delay { get; set; }
 
         //Eléments nécessaires à la communication avec le serveur
         public TcpClient connectionSocket = new TcpClient();
@@ -29,13 +30,25 @@ namespace DeepWerewolf
 
 
 
-        public Program()
+        public Program(string[] args)
         {
             //On récupère les paramètres dans le fichier de configuration
-            List<string> settings = File.ReadLines(pathToConfigFile).ToList();
-            name = settings[0] + DateTime.Now.Millisecond.ToString();
-            serverIP = IPAddress.Parse(settings[1]);
-            serverPort = int.Parse(settings[2]);
+            if (args.Length == 0)
+            {
+                List<string> settings = File.ReadLines(pathToConfigFile).ToList();
+                name = settings[0] + DateTime.Now.Millisecond.ToString();
+                serverIP = IPAddress.Parse(settings[1]);
+                serverPort = int.Parse(settings[2]);
+                time_delay = 2;
+            }
+
+            else
+            {
+                time_delay = int.Parse(args[args.Length - 4]);
+                name = args[args.Length - 3] + DateTime.Now.Millisecond.ToString();
+                serverIP = IPAddress.Parse(args[args.Length - 2]);
+                serverPort = int.Parse(args[args.Length - 1]);
+            }
             espece = "";
             isPlaying = false;
             
@@ -94,6 +107,7 @@ namespace DeepWerewolf
             while (!NS.DataAvailable)
             {
                 //On attend qu'il y ait quelque chose sur le stream
+                Thread.Sleep(10);
             }
 
             string order = Encoding.ASCII.GetString(BR.ReadBytes(3));
@@ -425,7 +439,7 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
             List<int[]> movements = calcul_meilleur_coup(2);
-            Thread.Sleep(2000);
+            Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
 
@@ -532,7 +546,8 @@ namespace DeepWerewolf
 
         static void Main(string[] args)
         {
-            Program myGame = new Program();
+
+            Program myGame = new Program(args);
             myGame.initConnection(myGame.serverIP, myGame.serverPort);
             //myGame.currentMap = new GameMap(5, 10);
             //GameMap new_map = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 4, 4, 3 } });
@@ -612,9 +627,15 @@ namespace DeepWerewolf
                 Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle());
 
                 //on tape une commande de mouvement
-                myGame.ia_play();
+
+                if (myGame.isPlaying)
+                {
+                    myGame.ia_play();
+                }
 
             }
+
+            myGame.connectionSocket.Close();
 
             //var moves = new List<int[]>();
             //moves.Add(new int[5] { 4, 3, 3, 4, 1 });

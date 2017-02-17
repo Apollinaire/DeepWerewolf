@@ -227,16 +227,7 @@ namespace DeepWerewolf
             return res;
         }
 
-
-
-        public double oracle(double seuil_proba, int base_heuristique)
-        {
-            //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
-            //Mode = 1 pour resultat_attaque
-            //Mode = 2 pour esperance_attaque
-
-            return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
-        }
+        
 
         public double oracle()
         {
