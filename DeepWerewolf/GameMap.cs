@@ -884,7 +884,7 @@ namespace DeepWerewolf
                     }
                 }
 
-                res += 1.0 / (total_dist + 2);
+                res += 1.0 / (total_dist + 50);
                 global_distance_considered = true;
             }
 
@@ -938,7 +938,7 @@ namespace DeepWerewolf
                         }
                     }
 
-                    res -= 1.0 / (total_dist + 2);
+                    res -= 1.0 / (total_dist + 50);
                 }
             }
 
