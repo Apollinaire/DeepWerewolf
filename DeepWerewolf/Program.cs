@@ -439,7 +439,7 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
             List<int[]> movements = calcul_meilleur_coup(2);
-            Thread.Sleep(time_delay*1000 - 500);
+            //Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
 
@@ -458,28 +458,97 @@ namespace DeepWerewolf
             List<List<int[]>> moves = currentMap.calculate_moves(false);
             double max = -1000.0;
             List<int[]> move_to_do = new List<int[]>();
-            foreach (List<int[]> move in moves)
+
+            List<Thread> thread_list = new List<Thread>();
+            double[] tmp = new double[moves.Count];
+            int i = 0;
+
+            
+            for ( i=0; i< moves.Count; i++)
             {
-                
+                List<int[]> move = moves[i];
                 GameMap mapATester = currentMap.interprete_moves(move);
-                double tmp = calcul_Min(mapATester, profondeur - 1);
-                if (tmp > max)
-                {
-                    max = tmp;
-                    move_to_do = move;
-                }
+                List<object> parameters = new List<object>();
+                parameters.Add(mapATester);
+                parameters.Add(profondeur);
+                parameters.Add(tmp);
+                parameters.Add(i);
+
+                //On lance un thread pour évaluer la qualité de ce move
+                //Thread thr = new Thread( 
+                //    () => 
+                //    {
+                //        double value = calcul_Min(mapATester, profondeur - 1);
+                //        lock (tmp)
+                //        {
+                //            tmp[i] = value;
+                //        }
+                //    });
+
+                //On lance un thread pour 
+                Thread thr = new Thread(thread_calcul_min);
+
+                thread_list.Add(thr);
+
+                //On lance calcul_min() sur ce move
+                thr.Start(parameters);   
 
             }
 
+            //On attend la fin de tous les threads
+            foreach (Thread t in thread_list)
+            {
+                t.Join();
+            }
 
-            
+            for (i = 0; i < thread_list.Count; i++)
+            {
+
+                if (tmp[i] > max)
+                {
+                    max = tmp[i];
+                    move_to_do = moves[i];
+                }
+            }
+
             return move_to_do;
         }
 
+        public void thread_calcul_min(object parameters)
+        {
+            //méthode appelée dans chaque thread lancé par calcul meilleur coup 
 
+            GameMap mapATester = (GameMap)((List<object>)parameters)[0];
+            int profondeur = (int)((List<object>)parameters)[1];
+            int i = (int)((List<object>)parameters)[3];
+
+            double value = calcul_Min(mapATester, profondeur - 1);
+
+            lock ((double[])((List<object>)parameters)[2])
+            {
+                ((double[])((List<object>)parameters)[2])[i] = value;
+            }
+        }
 
         public double calcul_Max(GameMap MapATester, int profondeur)
         {
+            bool[] end_game = MapATester.game_over();
+
+            if (end_game[0])
+            {
+                //la partie est terminée
+                if (end_game[1])
+                {
+                    //on a gagné
+                    return 10000;
+                }
+                else
+                {
+                    return -10000;
+                }
+            }
+
+            
             if (profondeur == 0)
             {
                 //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
@@ -512,6 +581,22 @@ namespace DeepWerewolf
         public double calcul_Min(GameMap MapATester, int profondeur)
         {
             Console.WriteLine("Starting calculMin...");
+            bool[] end_game = MapATester.game_over();
+
+            if (end_game[0])
+            {
+                //la partie est terminée
+                if (end_game[1])
+                {
+                    //on a gagné
+                    return 10000;
+                }
+                else
+                {
+                    return -10000;
+                }
+            }
+
             if (profondeur == 0)
             {
                 //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
@@ -557,6 +642,11 @@ namespace DeepWerewolf
             //int[] res = myGame.currentMap.resultat_attaque(myGame.currentMap.getTile(4, 3), myGame.currentMap.getTile(4, 1), 1);
             //Console.WriteLine($"{res[0]} {res[1]}");
 
+            //var result1 = myGame.currentMap.game_over();
+            //Console.WriteLine($"{result1[0]}  {result1[1]}");
+            //GameMap testmap = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 5, 0, 6, 6, 0 } });
+            //var result2 = testmap.game_over();
+            //Console.WriteLine($"{result2[0]}  {result2[1]}");
 
             ////Tile t1 = new Tile(1, 1, 4, 0, false);
             //Tile t2 = new Tile(1, 1, 4, 0, false);
