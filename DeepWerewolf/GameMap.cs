@@ -152,9 +152,9 @@ namespace DeepWerewolf
                 {
                     // Il s'agit d'une attaque
                     Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
-                    int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                    int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
-                    int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
+                    int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[0];
+                    int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[1];
+                    int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.6)[2];
                     bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
                     int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
                     newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
@@ -840,6 +840,7 @@ namespace DeepWerewolf
             int n_gr_enemies = 0;
             int c = 0;
             int total_dist = 0;
+            bool global_distance_considered = false;
             Tile previous_group = new Tile(0, 0, 0, 0, false);
             foreach (Tile t in allies_groups.Keys)
             {
@@ -870,6 +871,24 @@ namespace DeepWerewolf
             {
                 res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
             }
+
+            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+            if (n_gr_allies == 1)
+            {
+                total_dist = 0;
+                foreach (Tile allie in allies_groups.Keys)
+                {
+                    foreach (Tile enemie in enemies_groups.Keys)
+                    {
+                        total_dist += distance(allie, enemie);
+                    }
+                }
+
+                res += 1.0 / (total_dist + 2);
+                global_distance_considered = true;
+            }
+
+            
 
             Console.WriteLine("");
 
@@ -905,6 +924,24 @@ namespace DeepWerewolf
                 res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
             }
 
+            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+            if (n_gr_enemies == 1)
+            {
+                if (!global_distance_considered)
+                {
+                    total_dist = 0;
+                    foreach (Tile enemie in enemies_groups.Keys)
+                    {
+                        foreach (Tile allie in allies_groups.Keys)
+                        {
+                            total_dist += distance(allie, enemie);
+                        }
+                    }
+
+                    res -= 1.0 / (total_dist + 2);
+                }
+            }
+
             Console.WriteLine("");
 
             
@@ -936,6 +973,35 @@ namespace DeepWerewolf
         public bool is_between(Tile middle_tile, Tile start_Tile, Tile end_Tile)
         {
             return distance(start_Tile, middle_tile) + distance(middle_tile, end_Tile) == distance(start_Tile, end_Tile);
+        }
+
+        public bool[] game_over()
+        {
+            //détermine si une partie est terminée et donne le vainqueur
+            int allies = 0;
+            int enemies = 0;
+            bool[] result = new bool[2] { false, false };
+            foreach (Tile t in tuiles)
+            {
+                allies += t.allies();
+                enemies += t.enemies();
+            }
+
+            if (allies * enemies == 0)
+            {
+                result[0] = true;
+
+                if (allies == 0)
+                {
+                    result[1] = false;
+                }
+                else
+                {
+                    result[1] = true;
+                }
+            }
+
+            return result;
         }
 
         private double heuristique_1(bool enemy, double seuil_proba, int mode)
