@@ -461,6 +461,8 @@ namespace DeepWerewolf
 
             int k = 0;
 
+
+
             while (move_to_do.Count == 0)
             {
                 List<Thread> thread_list = new List<Thread>();
