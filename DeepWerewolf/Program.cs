@@ -456,6 +456,8 @@ namespace DeepWerewolf
 
             //Remarque: S’inspire de IA_jouer du cours Open Classroom
             List<List<int[]>> moves = currentMap.calculate_moves(false);
+            double alpha = -100000.0; // On fixe la valeur d'alpha
+            double beta = 100000.0; // On fixe la valeur de beta
             double max = -100000.0;
             List<int[]> move_to_do = new List<int[]>();
 
@@ -466,7 +468,6 @@ namespace DeepWerewolf
                 List<Thread> thread_list = new List<Thread>();
                 double[] tmp = new double[moves.Count];
                 int i = 0;
-                
 
                 for (i = 0; i < moves.Count; i++)
                 {
@@ -477,7 +478,8 @@ namespace DeepWerewolf
                     parameters.Add(profondeur - k);
                     parameters.Add(tmp);
                     parameters.Add(i);
-
+                    parameters.Add(alpha);
+                    parameters.Add(beta);
                     //On lance un thread pour évaluer la qualité de ce move
                     //Thread thr = new Thread( 
                     //    () => 
@@ -529,8 +531,9 @@ namespace DeepWerewolf
             GameMap mapATester = (GameMap)((List<object>)parameters)[0];
             int profondeur = (int)((List<object>)parameters)[1];
             int i = (int)((List<object>)parameters)[3];
-
-            double value = calcul_Min(mapATester, profondeur - 1);
+            double alpha = (double)((List<object>) parameters)[4];
+            double beta = (double)((List<object>) parameters)[5];
+            double value = calcul_Min(mapATester, profondeur - 1, alpha, beta);
 
             lock ((double[])((List<object>)parameters)[2])
             {
@@ -538,7 +541,7 @@ namespace DeepWerewolf
             }
         }
 
-        public double calcul_Max(GameMap MapATester, int profondeur)
+        public double calcul_Max(GameMap MapATester, int profondeur, double alpha, double beta)
         {
             bool[] end_game = MapATester.game_over();
 
@@ -565,18 +568,16 @@ namespace DeepWerewolf
             else
             {
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(false);
-                double max = -10000; //Valeur initiale très basse pour min
-                double tmp;
                 foreach (List<int[]> move in possibleMoves)
                 {
                     GameMap newMap = MapATester.interprete_moves(move);
-                    tmp = calcul_Min(newMap, profondeur - 1);
-                    if (tmp > max)
+                    alpha = Math.Max(alpha, calcul_Min(newMap, profondeur - 1, alpha, beta));
+                    if (alpha > beta)
                     {
-                        max = tmp;
+                        return alpha;
                     }
                 }
-                return max;
+                return alpha;
             }
             //Renvoie un double représentant le maximum que l’on peut obtenir à partir de la situation représentée par le paramètre MapATester
 
@@ -586,7 +587,7 @@ namespace DeepWerewolf
             //Remarque : S’inspire de la fonction Max du coup Open Classroom
         }
 
-        public double calcul_Min(GameMap MapATester, int profondeur)
+        public double calcul_Min(GameMap MapATester, int profondeur, double alpha, double beta)
         {
             Console.WriteLine("Starting calculMin...");
             bool[] end_game = MapATester.game_over();
@@ -612,20 +613,18 @@ namespace DeepWerewolf
             }
             else
             {
+                //Hello
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(true);
-                double min = 10000; //Valeur initiale très élevée pour min
-                double tmp;
                 foreach (List<int[]> move in possibleMoves)
                 {
                     GameMap newMap = MapATester.interprete_moves(move);
-                    int pro = profondeur-1;
-                    tmp = calcul_Max(newMap, profondeur - 1);
-                    if (tmp < min)
+                    beta = Math.Min(beta, calcul_Max(newMap, profondeur - 1, alpha, beta));
+                    if (beta < alpha)
                     {
-                        min = tmp;
+                        return beta;
                     }
                 }
-                return min;
+                return beta;
             }
             //Renvoie un double représentant le minimum que l’adversaire peut obtenir à partir de la situation représentée par le paramètre MapATester.
 
