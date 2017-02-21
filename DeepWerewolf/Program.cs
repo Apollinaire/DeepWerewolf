@@ -606,6 +606,7 @@ namespace DeepWerewolf
             }
             else
             {
+                //Hello
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(true);
                 foreach (List<int[]> move in possibleMoves)
                 {
