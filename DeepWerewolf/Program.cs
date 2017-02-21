@@ -614,6 +614,7 @@ namespace DeepWerewolf
             }
             else
             {
+                //Hello
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(true);
                 double min = 10000; //Valeur initiale très élevée pour min
                 double tmp;
