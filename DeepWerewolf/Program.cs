@@ -524,6 +524,8 @@ namespace DeepWerewolf
             return move_to_do;
         }
 
+
+
         public void thread_calcul_min(object parameters)
         {
             //méthode appelée dans chaque thread lancé par calcul meilleur coup 
