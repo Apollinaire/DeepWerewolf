@@ -439,7 +439,7 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
             List<int[]> movements = calcul_meilleur_coup(2);
-            //Thread.Sleep(time_delay*1000 - 500);
+            Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
 
@@ -456,64 +456,71 @@ namespace DeepWerewolf
 
             //Remarque: S’inspire de IA_jouer du cours Open Classroom
             List<List<int[]>> moves = currentMap.calculate_moves(false);
-            double alpha = -1000.0; // On fixe la valeur d'alpha
-            double beta = 1000.0; // On fixe la valeur de beta
-            double max = -1000.0;
+            double alpha = -100000.0; // On fixe la valeur d'alpha
+            double beta = 100000.0; // On fixe la valeur de beta
+            double max = -100000.0;
             List<int[]> move_to_do = new List<int[]>();
 
-            List<Thread> thread_list = new List<Thread>();
-            double[] tmp = new double[moves.Count];
-            int i = 0;
+            int k = 0;
 
-            
-            for ( i=0; i< moves.Count; i++)
+            while (move_to_do.Count == 0)
             {
-                List<int[]> move = moves[i];
-                GameMap mapATester = currentMap.interprete_moves(move);
-                List<object> parameters = new List<object>();
-                parameters.Add(mapATester);
-                parameters.Add(profondeur);
-                parameters.Add(tmp);
-                parameters.Add(i);
-                parameters.Add(alpha);
-                parameters.Add(beta);
-                //On lance un thread pour évaluer la qualité de ce move
-                //Thread thr = new Thread( 
-                //    () => 
-                //    {
-                //        double value = calcul_Min(mapATester, profondeur - 1);
-                //        lock (tmp)
-                //        {
-                //            tmp[i] = value;
-                //        }
-                //    });
+                List<Thread> thread_list = new List<Thread>();
+                double[] tmp = new double[moves.Count];
+                int i = 0;
 
-                //On lance un thread pour 
-                Thread thr = new Thread(thread_calcul_min);
-
-                thread_list.Add(thr);
-
-                //On lance calcul_min() sur ce move
-                thr.Start(parameters);   
-
-            }
-
-            //On attend la fin de tous les threads
-            foreach (Thread t in thread_list)
-            {
-                t.Join();
-            }
-
-            for (i = 0; i < thread_list.Count; i++)
-            {
-
-                if (tmp[i] > max)
+                for (i = 0; i < moves.Count; i++)
                 {
-                    max = tmp[i];
-                    move_to_do = moves[i];
-                }
-            }
+                    List<int[]> move = moves[i];
+                    GameMap mapATester = currentMap.interprete_moves(move);
+                    List<object> parameters = new List<object>();
+                    parameters.Add(mapATester);
+                    parameters.Add(profondeur - k);
+                    parameters.Add(tmp);
+                    parameters.Add(i);
+                    parameters.Add(alpha);
+                    parameters.Add(beta);
+                    //On lance un thread pour évaluer la qualité de ce move
+                    //Thread thr = new Thread( 
+                    //    () => 
+                    //    {
+                    //        double value = calcul_Min(mapATester, profondeur - 1);
+                    //        lock (tmp)
+                    //        {
+                    //            tmp[i] = value;
+                    //        }
+                    //    });
 
+                    //On lance un thread pour 
+                    Thread thr = new Thread(thread_calcul_min);
+
+                    thread_list.Add(thr);
+
+                    //On lance calcul_min() sur ce move
+                    thr.Start(parameters);
+
+                }
+
+                //On attend la fin de tous les threads
+                foreach (Thread t in thread_list)
+                {
+                    t.Join();
+                }
+
+                for (i = 0; i < moves.Count; i++)
+                {
+
+                    if (tmp[i] > max)
+                    {
+                        if (tmp[i] != -10000)
+                        {
+                            max = tmp[i];
+                            move_to_do = moves[i];
+                        }
+                    }
+                }
+                k++;
+            }
             return move_to_do;
         }
 
