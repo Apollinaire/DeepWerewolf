@@ -225,22 +225,63 @@ namespace DeepWerewolf
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
             Console.WriteLine("Starting calculate_moves...");
-            List<List<int[]>> res = new List<List<int[]>>();
+            List<List<int[]>> result = new List<List<int[]>>();
+            Dictionary<int, List<List<int[]>>> group_moves = new Dictionary<int, List<List<int[]>>>();
 
+            int i = 0;
+
+            //On calcule tous les moves possibles pour chacun des groupes présents sur la map
             foreach (Tile Tuile in tuiles)
             {
                 if (Tuile.preys() == 0)
                 {
-                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé
+                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé (allie ou ennemi)
                     {
-                        res.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
+                        //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
+                        group_moves.Add(i, calculate_group_moves(Tuile, consider_split(Tuile)));
+                        i++;
                     }
                 }
             }
-            return res;
+
+            //La liste des actions possibles sur la map est donc l'ensemble des combinaisons obtenues en prenant soit 0, soit 1
+            //move dans la liste des moves possibles pour chaque groupe
+
+            //On va rajouter dans result les moves dans lesquels on ne considèe qu'un seul groupe à la fois, puis 2, puis 3, etc...
+            int n = 0;
+            for (n = 1; n<=i; n++)
+            {
+                //n va représenter le nombre de groupes à considérer
+
+            }
+
+            return result;
         }
 
         
+
+        public static List<List<int>> GetCombination(List<int> list)
+        {
+            double count = Math.Pow(2, list.Count);
+            List<List<int>> result = new List<List<int>>();
+            for (int i = 1; i <= count - 1; i++)
+            {
+                List<int> combination = new List<int>();
+                string str = Convert.ToString(i, 2).PadLeft(list.Count, '0'); //convertit i en base 2 et transforme cette représentation en string
+                for (int j = 0; j < str.Length; j++)
+                {
+                    if (str[j] == '1')
+                    {
+                        //Console.Write(list[j]);
+                        combination.Add(list[j]);
+                    }
+                }
+                //Console.WriteLine();
+                result.Add(combination);
+            }
+
+            return result;
+        }
 
         public double oracle()
         {
