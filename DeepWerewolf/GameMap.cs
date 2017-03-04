@@ -269,7 +269,50 @@ namespace DeepWerewolf
 
             for(int k = 1; k<=group_moves.Count; k++)
             {
-                //n va représenter le nombre de groupes à considérer
+                int total = final_list.Count;
+
+                //lors de la première itération, on remplit une liste qui indexe la liste des moves du premier groupe
+                if (k == 1)
+                {
+                    for (int l = 0; l < group_moves[k].Count; l++)
+                    {
+                        final_list.Add(new List<int> { l });
+                    }
+                }
+
+                else
+                {
+                    //On crée une liste temporaire qui va contenir la liste des combinaisons d'indexes en prenant en compte un groupe supplémentaire
+                    List<List<int>> temporary_list = new List<List<int>>();
+
+                    for (int m = 0; m < total; m++)
+                    {
+                        
+                        for (int l = 0; l < group_moves[k].Count; l++)
+                        {
+                            //On ajoute à l'élément de final_list l'index du move dans la liste liée au groupe courant
+                            final_list[m].Add(l);
+
+                            List<int> temp = new List<int>();
+                            temp.AddRange(final_list[m]); 
+
+                            temporary_list.Add(temp);
+                            
+                            final_list[m].RemoveAt(final_list[m].Count - 1);
+                        }
+                    }
+
+                    final_list = new List<List<int>>();
+                    final_list.AddRange(temporary_list);
+
+
+            }
+
+            //ici, final_list contient la liste de tous les combinaisons obtenues en prenant 1 élément dans chaque liste de moves de groupe
+            //On n'a plus qu'à générer la liste des moves correspondant à ces indexes
+
+            foreach (List<int> list in final_list)
+            {
                 List<int[]> action = new List<int[]>();
                 for (int k = 1; k <= group_moves.Count; k++)
                 {
@@ -279,7 +322,17 @@ namespace DeepWerewolf
                 result.Add(action);
 
                 //-----Affichage---------
+                //foreach (int[] move in action)
+                //{
+                //    Console.Write("[ ");
+                //    for (int k=0; k < move.Length; k++)
+                //    {
+                //        Console.Write("{0} ", move[k]);
+                //    }
+                //    Console.Write("] ");
                     
+                //}
+                //Console.Write("\n");
 
                 //-----------------------
             }
