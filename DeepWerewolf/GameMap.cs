@@ -210,6 +210,7 @@ namespace DeepWerewolf
                             res.Add(new List<int[]>() { move});
                     }
                 }
+                
                 if (split & number>1) //ensuite avec split
                 {
                     List<int[]> action = new List<int[]>();
@@ -243,31 +244,44 @@ namespace DeepWerewolf
             List<List<int[]>> result = new List<List<int[]>>();
             Dictionary<int, List<List<int[]>>> group_moves = new Dictionary<int, List<List<int[]>>>();
 
-            int i = 0;
+            int i = 1;
 
             //On calcule tous les moves possibles pour chacun des groupes présents sur la map
             foreach (Tile Tuile in tuiles)
             {
-                if (Tuile.preys() == 0)
+                if (Tuile.monstres.number != 0)
                 {
                     if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé (allie ou ennemi)
                     {
                         //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
-                        group_moves.Add(i, calculate_group_moves(Tuile, consider_split(Tuile)));
+                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile));
+                        group_moves.Add(i, group_moves_list );
                         i++;
                     }
                 }
             }
 
-            //La liste des actions possibles sur la map est donc l'ensemble des combinaisons obtenues en prenant soit 0, soit 1
+            //La liste des actions possibles sur la map est donc l'ensemble des combinaisons obtenues en prenant 1
             //move dans la liste des moves possibles pour chaque groupe
 
-            //On va rajouter dans result les moves dans lesquels on ne considèe qu'un seul groupe à la fois, puis 2, puis 3, etc...
-            int n = 0;
-            for (n = 1; n<=i; n++)
+            //On va générer une liste des indexes des moves à prélever dans chaque liste de moves de groupe pour construire une action
+            List<List<int>> final_list = new List<List<int>>();
+
+            for(int k = 1; k<=group_moves.Count; k++)
             {
                 //n va représenter le nombre de groupes à considérer
+                List<int[]> action = new List<int[]>();
+                for (int k = 1; k <= group_moves.Count; k++)
+                {
+                    action.AddRange(group_moves[k][list[k - 1]]);
+                }
 
+                result.Add(action);
+
+                //-----Affichage---------
+                    
+
+                //-----------------------
             }
 
             return result;
@@ -275,7 +289,7 @@ namespace DeepWerewolf
 
         
 
-        public static List<List<int>> GetCombination(List<int> list)
+        public static List<List<int>> get_combination(List<int> list)
         {
             double count = Math.Pow(2, list.Count);
             List<List<int>> result = new List<List<int>>();
