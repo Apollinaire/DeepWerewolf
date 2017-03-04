@@ -302,10 +302,12 @@ namespace DeepWerewolf
                         }
                     }
 
+                    //On met à jour final_list (qui va maintenant contenir des combinaisons dont la longueur a augmenté de 1
                     final_list = new List<List<int>>();
                     final_list.AddRange(temporary_list);
 
 
+                }
             }
 
             //ici, final_list contient la liste de tous les combinaisons obtenues en prenant 1 élément dans chaque liste de moves de groupe
@@ -325,12 +327,12 @@ namespace DeepWerewolf
                 //foreach (int[] move in action)
                 //{
                 //    Console.Write("[ ");
-                //    for (int k=0; k < move.Length; k++)
+                //    for (int k = 0; k < move.Length; k++)
                 //    {
                 //        Console.Write("{0} ", move[k]);
                 //    }
                 //    Console.Write("] ");
-                    
+
                 //}
                 //Console.Write("\n");
 
