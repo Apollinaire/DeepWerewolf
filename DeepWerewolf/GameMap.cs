@@ -172,30 +172,149 @@ namespace DeepWerewolf
             //Renvoie un objet List< List < int[ ] >> qui représente toutes les actions possibles pour un groupe présent sur la Tile passée en paramètre.
             List<List<int[]>> res = new List<List<int[]>>();
             int number = group_Tile.monstres.number;
-            if(number>=1)
+            if (number >= 1)
             {
                 for (int x = -1; x <= 1; x++) //d'abord les actions sans split
                 {
                     for (int y = -1; y <= 1; y++)
                     {
-                            int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, Math.Min(Math.Max(0, group_Tile.coord_x + x), size_y - 1), Math.Min(Math.Max(0, group_Tile.coord_y + y), size_x - 1) }; 
-                            res.Add(new List<int[]>() { move});
+                        int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, Math.Min(Math.Max(0, group_Tile.coord_x + x), size_y - 1), Math.Min(Math.Max(0, group_Tile.coord_y + y), size_x - 1) };
+                        res.Add(new List<int[]>() { move });
                     }
                 }
-                if (split & number>1) //ensuite avec split
+                if (split & number > 1) //ensuite avec split
                 {
-                    List<int[]> action = new List<int[]>();
-                    for (int i= 2; i <= number; i++) //nombre de splits du move
+                    List<int[]> list_moves = possible_moves(group_Tile);
+                    int len = list_moves.Count();
+                    for (int i = 0; i < len; i++)
                     {
-                        for (int j = 0; j < i; j++) //pour chaque split
+                        for (int j = i; j < len; j++)
                         {
-
+                            if (i != j)
+                            {
+                                for (int k = 1; k < number; k++)
+                                {
+                                    res.Add(new List<int[]> { add_monsters(list_moves[i], k), add_monsters(list_moves[j], number - k) });
+                                }
+                            }
                         }
+                    }
+                }
+            } 
+            return res;
+        }
 
+        public List<int[]> possible_moves(Tile group_Tile)
+            //retourne la liste des moves possibles pour une tuile donnee, sans le nombre de monstres à déplacer
+        {
+            List<int[]> res = new List<int[]>();
+            if (group_Tile.coord_x>0 && group_Tile.coord_x<size_x-1)
+            {
+                if (group_Tile.coord_y>0 && group_Tile.coord_y<size_y-1)//cas general
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        for (int y = -1; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else if (group_Tile.coord_y==0)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        for (int y = 0; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        for (int y = -1; y <=0; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
                     }
                 }
             }
-            
+            else if (group_Tile.coord_x==0)
+            {
+                if (group_Tile.coord_y > 0 && group_Tile.coord_y < size_y - 1)//cas general
+                {
+                    for (int x = 0; x <= 1; x++)
+                    {
+                        for (int y = -1; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else if (group_Tile.coord_y == 0)
+                {
+                    for (int x = 0; x <= 1; x++)
+                    {
+                        for (int y = 0; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else
+                {
+                    for (int x = 0; x <= 1; x++)
+                    {
+                        for (int y = -1; y <= 0; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (group_Tile.coord_y > 0 && group_Tile.coord_y < size_y - 1)//cas general
+                {
+                    for (int x = -1; x <= 0; x++)
+                    {
+                        for (int y = -1; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else if (group_Tile.coord_y == 0)
+                {
+                    for (int x = -1; x <= 0; x++)
+                    {
+                        for (int y = 0; y <= 1; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+                else
+                {
+                    for (int x = -1; x <= 0; x++)
+                    {
+                        for (int y = -1; y <= 0; y++)
+                        {
+                            int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                        }
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        public int[] add_monsters(int[] move,int monsters)
+            //ajoute le nbre de monstres à un move renvoyé par possible_moves
+        {
+            int[] res = new int[5] {move[0],move[1],monsters,move[2],move[3]};
             return res;
         }
 
