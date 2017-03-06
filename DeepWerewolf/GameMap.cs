@@ -191,7 +191,8 @@ namespace DeepWerewolf
                     return true;
                 }
             }
-            return false;
+            //return false;
+            return true;
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
@@ -444,17 +445,17 @@ namespace DeepWerewolf
                 result.Add(action);
 
                 //-----Affichage---------
-                //foreach (int[] move in action)
-                //{
-                //    Console.Write("[ ");
-                //    for (int k = 0; k < move.Length; k++)
-                //    {
-                //        Console.Write("{0} ", move[k]);
-                //    }
-                //    Console.Write("] ");
+                foreach (int[] move in action)
+                {
+                    Console.Write("[ ");
+                    for (int k = 0; k < move.Length; k++)
+                    {
+                        Console.Write("{0} ", move[k]);
+                    }
+                    Console.Write("] ");
 
-                //}
-                //Console.Write("\n");
+                }
+                Console.Write("\n");
 
                 //-----------------------
             }

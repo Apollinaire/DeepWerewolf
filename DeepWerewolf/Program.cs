@@ -640,15 +640,15 @@ namespace DeepWerewolf
         {
 
             Program myGame = new Program(args);
-            myGame.initConnection(myGame.serverIP, myGame.serverPort);
+            //myGame.initConnection(myGame.serverIP, myGame.serverPort);
 
-            //myGame.currentMap = new GameMap(5, 10);
-            //myGame.currentMap.setTile(2, 2, 0, 3, false);
-            //myGame.currentMap.setTile(4, 3, 0, 4, false);
+            myGame.currentMap = new GameMap(5, 10);
+            myGame.currentMap.setTile(2, 2, 0, 3, false);
+            myGame.currentMap.setTile(4, 3, 0, 4, false);
             //myGame.currentMap.setTile(5, 2, 0, 4, false);
             //myGame.currentMap.setTile(8, 2, 0, 4, false);
 
-            //myGame.currentMap.calculate_moves(false);
+            myGame.currentMap.calculate_moves(false);
             //GameMap new_map = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 4, 4, 3 } });
             //Console.WriteLine("Allies en ({0}, {1}) sur currentMap : {2}\nAllies en ({0}, {1}) sur newMap : {3}", 4, 3, myGame.currentMap.getTile(4, 3).allies(), new_map.getTile(4, 3).allies());
             //currentMap2.setTile(4, 1, 0, 25, false);
