@@ -124,46 +124,74 @@ namespace DeepWerewolf
         {
             GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
             //Renvoie un objet GameMap qui applique les mouvements représentés par moves sur l’objet GameMap qui appelle la fonction.
-            foreach (int[] table in moves)
-            {
-                Tile sourceTile = newMap.getTile(table[0], table[1]);
-                Tile destination = newMap.getTile(table[3], table[4]);
-                bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
-                int monstersAtDestination;
-                int opposedForcesAtDestination;
-                if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
+            foreach (int[] move in moves)
+            {                
+                if (move[2] != 0)
                 {
-                    enemyMove = false; // C'est nous qui jouons
-                    monstersAtDestination = destination.allies();
-                    opposedForcesAtDestination = destination.enemies();
+                    foreach (int[] otherMove in moves)
+                    {
+                        if (otherMove != move)
+                        {
+                            if (move[3] == otherMove[3] && move[4] == otherMove[4]) // Si les deux cases se déplacent vers la même case
+                            {
+                                move[2] += otherMove[2];
+                                otherMove[2] = 0;
+                            }
+                        }
+                    }
+                    Tile sourceTile = newMap.getTile(move[0], move[1]);
+                    Tile destination = newMap.getTile(move[3], move[4]);
+                    bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
+                    int monstersAtDestination;
+                    int opposedForcesAtDestination;
+                    if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
+                    {
+                        enemyMove = false; // C'est nous qui jouons
+                        monstersAtDestination = destination.allies();
+                        opposedForcesAtDestination = destination.enemies();
+                    }
+                    else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
+                    {
+                        enemyMove = true; // C'est l'ennemi qui joue
+                        monstersAtDestination = destination.enemies();
+                        opposedForcesAtDestination = destination.allies();
+                    }
+                    if (opposedForcesAtDestination == 0 && destination.preys() == 0)
+                    {
+                        // Il ne s'agit pas d'une attaque
+                        newMap.setTile(destination.coord_x, destination.coord_y, 0, move[2] + monstersAtDestination, enemyMove);
+                    }
+                    else
+                    {
+                        // Il s'agit d'une attaque
+                        Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, move[2], enemyMove);
+                        int AttackersAfterAttack = enemyMove ? move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[1] : move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[0];
+                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[1];
+                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.6)[2];
+                        bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
+                        int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
+                        newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
+                    }
+                    // A la fin, on déplace les alliés de la case départ
+                    newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - move[2], enemyMove);
                 }
-                else // Il y a des enemies dans la case départ (on ne traite pas le cas où il y a des humains) 
-                {
-                    enemyMove = true; // C'est l'ennemi qui joue
-                    monstersAtDestination = destination.enemies();
-                    opposedForcesAtDestination = destination.allies();
-                }
-                if (opposedForcesAtDestination == 0 && destination.preys() == 0)
-                {
-                    // Il ne s'agit pas d'une attaque
-                    newMap.setTile(destination.coord_x, destination.coord_y, 0, table[2] + monstersAtDestination, enemyMove);
-                }
-                else
-                {
-                    // Il s'agit d'une attaque
-                    Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, table[2], enemyMove);
-                    int AttackersAfterAttack = enemyMove ? table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[1] : table[2] + resultat_attaque(destination, fictiveSourceTile, 0.5)[0];
-                    int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.5)[1];
-                    int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.5)[2];
-                    bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
-                    int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
-                    newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
-                }
-                // A la fin, on déplace les alliés de la case départ
-                newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - table[2], enemyMove);
+                
             }
             // Si le mouvement n'est pas valide, on ne le traite pas
             return newMap;
+        }
+
+        public bool consider_split(Tile tuile)
+        {   
+            // Renvoie un booléen qui nous indique s'il est pertinent de séparer deux groupes
+            foreach (Tile tuileVoisin in this.tuiles)
+            {
+                if (distance(tuile, tuileVoisin) <= 3 && tuileVoisin.preys() != 0 && tuileVoisin.preys() <= tuile.monstres.number/2)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
@@ -182,6 +210,7 @@ namespace DeepWerewolf
                         res.Add(new List<int[]>() { move });
                     }
                 }
+
                 if (split & number > 1) //ensuite avec split
                 {
                     List<int[]> list_moves = possible_moves(group_Tile);
@@ -318,7 +347,7 @@ namespace DeepWerewolf
             return res;
         }
 
-        public List<List<int[]>> calculate_moves(bool enemy, bool split)
+        public List<List<int[]>> calculate_moves(bool enemy)
         {
             //Renvoie un objet List< List < int[ ] >> qui est la liste des actions possibles sur une map pour nous si enemy est false, et pour l’adversaire si enemy
             //est True.Une action est un élément du type List< int[5] > où chaque tableau d’int représente un move (x_depart, y_depart, nb_monstres, x_arrivee,
@@ -331,30 +360,130 @@ namespace DeepWerewolf
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
             Console.WriteLine("Starting calculate_moves...");
-            List<List<int[]>> res = new List<List<int[]>>();
+            List<List<int[]>> result = new List<List<int[]>>();
+            Dictionary<int, List<List<int[]>>> group_moves = new Dictionary<int, List<List<int[]>>>();
 
+            int i = 1;
+
+            //On calcule tous les moves possibles pour chacun des groupes présents sur la map
             foreach (Tile Tuile in tuiles)
             {
-                if (Tuile.preys() == 0)
+                if (Tuile.monstres.number != 0)
                 {
-                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé
+                    if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé (allie ou ennemi)
                     {
-                        res.AddRange(calculate_group_moves(Tuile, split));
+                        //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
+                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile));
+                        group_moves.Add(i, group_moves_list );
+                        i++;
                     }
                 }
             }
-            return res;
+
+            //La liste des actions possibles sur la map est donc l'ensemble des combinaisons obtenues en prenant 1
+            //move dans la liste des moves possibles pour chaque groupe
+
+            //On va générer une liste des indexes des moves à prélever dans chaque liste de moves de groupe pour construire une action
+            List<List<int>> final_list = new List<List<int>>();
+
+            for(int k = 1; k<=group_moves.Count; k++)
+            {
+                int total = final_list.Count;
+
+                //lors de la première itération, on remplit une liste qui indexe la liste des moves du premier groupe
+                if (k == 1)
+                {
+                    for (int l = 0; l < group_moves[k].Count; l++)
+                    {
+                        final_list.Add(new List<int> { l });
+                    }
+                }
+
+                else
+                {
+                    //On crée une liste temporaire qui va contenir la liste des combinaisons d'indexes en prenant en compte un groupe supplémentaire
+                    List<List<int>> temporary_list = new List<List<int>>();
+
+                    for (int m = 0; m < total; m++)
+                    {
+                        
+                        for (int l = 0; l < group_moves[k].Count; l++)
+                        {
+                            //On ajoute à l'élément de final_list l'index du move dans la liste liée au groupe courant
+                            final_list[m].Add(l);
+
+                            List<int> temp = new List<int>();
+                            temp.AddRange(final_list[m]); 
+
+                            temporary_list.Add(temp);
+                            
+                            final_list[m].RemoveAt(final_list[m].Count - 1);
+                        }
+                    }
+
+                    //On met à jour final_list (qui va maintenant contenir des combinaisons dont la longueur a augmenté de 1
+                    final_list = new List<List<int>>();
+                    final_list.AddRange(temporary_list);
+
+
+                }
+            }
+
+            //ici, final_list contient la liste de tous les combinaisons obtenues en prenant 1 élément dans chaque liste de moves de groupe
+            //On n'a plus qu'à générer la liste des moves correspondant à ces indexes
+
+            foreach (List<int> list in final_list)
+            {
+                List<int[]> action = new List<int[]>();
+                for (int k = 1; k <= group_moves.Count; k++)
+                {
+                    action.AddRange(group_moves[k][list[k - 1]]);
+                }
+
+                result.Add(action);
+
+                //-----Affichage---------
+                //foreach (int[] move in action)
+                //{
+                //    Console.Write("[ ");
+                //    for (int k = 0; k < move.Length; k++)
+                //    {
+                //        Console.Write("{0} ", move[k]);
+                //    }
+                //    Console.Write("] ");
+
+                //}
+                //Console.Write("\n");
+
+                //-----------------------
+            }
+
+            return result;
         }
 
+        
 
-
-        public double oracle(double seuil_proba, int base_heuristique)
+        public static List<List<int>> get_combination(List<int> list)
         {
-            //cette fonction évalue la favorabilité d'un plateau en utilisant la formule qu'on a définie
-            //Mode = 1 pour resultat_attaque
-            //Mode = 2 pour esperance_attaque
+            double count = Math.Pow(2, list.Count);
+            List<List<int>> result = new List<List<int>>();
+            for (int i = 1; i <= count - 1; i++)
+            {
+                List<int> combination = new List<int>();
+                string str = Convert.ToString(i, 2).PadLeft(list.Count, '0'); //convertit i en base 2 et transforme cette représentation en string
+                for (int j = 0; j < str.Length; j++)
+                {
+                    if (str[j] == '1')
+                    {
+                        //Console.Write(list[j]);
+                        combination.Add(list[j]);
+                    }
+                }
+                //Console.WriteLine();
+                result.Add(combination);
+            }
 
-            return heuristique_1(false, seuil_proba, base_heuristique) - heuristique_1(true, seuil_proba, base_heuristique);
+            return result;
         }
 
         public double oracle()
@@ -955,6 +1084,7 @@ namespace DeepWerewolf
             int n_gr_enemies = 0;
             int c = 0;
             int total_dist = 0;
+            bool global_distance_considered = false;
             Tile previous_group = new Tile(0, 0, 0, 0, false);
             foreach (Tile t in allies_groups.Keys)
             {
@@ -985,6 +1115,24 @@ namespace DeepWerewolf
             {
                 res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
             }
+
+            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+            if (n_gr_allies == 1)
+            {
+                total_dist = 0;
+                foreach (Tile allie in allies_groups.Keys)
+                {
+                    foreach (Tile enemie in enemies_groups.Keys)
+                    {
+                        total_dist += distance(allie, enemie);
+                    }
+                }
+
+                res += 1.0 / (total_dist + 50);
+                global_distance_considered = true;
+            }
+
+            
 
             Console.WriteLine("");
 
@@ -1020,6 +1168,24 @@ namespace DeepWerewolf
                 res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
             }
 
+            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+            if (n_gr_enemies == 1)
+            {
+                if (!global_distance_considered)
+                {
+                    total_dist = 0;
+                    foreach (Tile enemie in enemies_groups.Keys)
+                    {
+                        foreach (Tile allie in allies_groups.Keys)
+                        {
+                            total_dist += distance(allie, enemie);
+                        }
+                    }
+
+                    res -= 1.0 / (total_dist + 50);
+                }
+            }
+
             Console.WriteLine("");
 
             
@@ -1051,6 +1217,35 @@ namespace DeepWerewolf
         public bool is_between(Tile middle_tile, Tile start_Tile, Tile end_Tile)
         {
             return distance(start_Tile, middle_tile) + distance(middle_tile, end_Tile) == distance(start_Tile, end_Tile);
+        }
+
+        public bool[] game_over()
+        {
+            //détermine si une partie est terminée et donne le vainqueur
+            int allies = 0;
+            int enemies = 0;
+            bool[] result = new bool[2] { false, false };
+            foreach (Tile t in tuiles)
+            {
+                allies += t.allies();
+                enemies += t.enemies();
+            }
+
+            if (allies * enemies == 0)
+            {
+                result[0] = true;
+
+                if (allies == 0)
+                {
+                    result[1] = false;
+                }
+                else
+                {
+                    result[1] = true;
+                }
+            }
+
+            return result;
         }
 
         private double heuristique_1(bool enemy, double seuil_proba, int mode)
