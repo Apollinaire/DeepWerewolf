@@ -644,7 +644,7 @@ namespace DeepWerewolf
 
             myGame.currentMap = new GameMap(5, 10);
             myGame.currentMap.setTile(2, 2, 0, 3, false);
-            myGame.currentMap.setTile(4, 3, 0, 4, false);
+            //myGame.currentMap.setTile(4, 3, 0, 4, false);
             //myGame.currentMap.setTile(5, 2, 0, 4, false);
             //myGame.currentMap.setTile(8, 2, 0, 4, false);
 
