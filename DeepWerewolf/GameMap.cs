@@ -196,25 +196,29 @@ namespace DeepWerewolf
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
         {
-            Console.WriteLine("Starting calculate_group_moves...");
             //Renvoie un objet List< List < int[ ] >> qui représente toutes les actions possibles pour un groupe présent sur la Tile passée en paramètre.
             List<List<int[]>> res = new List<List<int[]>>();
+            List<int[]> list_moves = possible_moves(group_Tile);
+            int len = list_moves.Count();
             int number = group_Tile.monstres.number;
             if (number >= 1)
             {
-                for (int x = -1; x <= 1; x++) //d'abord les actions sans split
+               /* for (int x = -1; x <= 1; x++) //d'abord les actions sans split
                 {
                     for (int y = -1; y <= 1; y++)
                     {
                         int[] move = new int[5] { group_Tile.coord_x, group_Tile.coord_y, number, Math.Min(Math.Max(0, group_Tile.coord_x + x), size_y - 1), Math.Min(Math.Max(0, group_Tile.coord_y + y), size_x - 1) };
                         res.Add(new List<int[]>() { move });
                     }
+                }*/
+                foreach (var move in list_moves)
+                {
+                    res.Add(new List<int[]> { add_monsters(move, number) });
                 }
 
                 if (split & number > 1) //ensuite avec split
                 {
-                    List<int[]> list_moves = possible_moves(group_Tile);
-                    int len = list_moves.Count();
+
                     for (int i = 0; i < len; i++)
                     {
                         for (int j = i; j < len; j++)
@@ -237,15 +241,16 @@ namespace DeepWerewolf
             //retourne la liste des moves possibles pour une tuile donnee, sans le nombre de monstres à déplacer
         {
             List<int[]> res = new List<int[]>();
-            if (group_Tile.coord_x>0 && group_Tile.coord_x<size_x-1)
+            if (group_Tile.coord_x>0 && group_Tile.coord_x<size_y-1)
             {
-                if (group_Tile.coord_y>0 && group_Tile.coord_y<size_y-1)//cas general
+                if (group_Tile.coord_y>0 && group_Tile.coord_y<size_x-1)//cas general
                 {
                     for (int x = -1; x <= 1; x++)
                     {
                         for (int y = -1; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -256,6 +261,7 @@ namespace DeepWerewolf
                         for (int y = 0; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -266,6 +272,7 @@ namespace DeepWerewolf
                         for (int y = -1; y <=0; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -279,6 +286,7 @@ namespace DeepWerewolf
                         for (int y = -1; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -289,6 +297,7 @@ namespace DeepWerewolf
                         for (int y = 0; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -299,19 +308,21 @@ namespace DeepWerewolf
                         for (int y = -1; y <= 0; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
             }
             else
             {
-                if (group_Tile.coord_y > 0 && group_Tile.coord_y < size_y - 1)//cas general
+                if (group_Tile.coord_y > 0 && group_Tile.coord_y < (size_x - 1))//cas general
                 {
                     for (int x = -1; x <= 0; x++)
                     {
                         for (int y = -1; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -322,6 +333,7 @@ namespace DeepWerewolf
                         for (int y = 0; y <= 1; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -332,6 +344,7 @@ namespace DeepWerewolf
                         for (int y = -1; y <= 0; y++)
                         {
                             int[] move = new int[4] { group_Tile.coord_x, group_Tile.coord_y, group_Tile.coord_x + x, group_Tile.coord_y + y };
+                            res.Add(move);
                         }
                     }
                 }
@@ -374,6 +387,8 @@ namespace DeepWerewolf
                     {
                         //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
                         List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile));
+                        //List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, true);
+
                         group_moves.Add(i, group_moves_list );
                         i++;
                     }
