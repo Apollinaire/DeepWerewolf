@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading;
 using System.IO;
 using System.Net.Sockets;
+using System.Collections.ObjectModel;
 
 namespace DeepWerewolf
 {
@@ -82,7 +83,7 @@ namespace DeepWerewolf
             //On reçoit la frame MAP
             receive_frame();
 
-            //Console.WriteLine(this.currentMap.size_x);
+            ////Console.WriteLine(this.currentMap.size_x);
 
 
 
@@ -128,7 +129,7 @@ namespace DeepWerewolf
 
                         //On initialise la grille du jeu
                         this.currentMap = new GameMap(rows, columns);
-                        Console.WriteLine("Taille de la map : {0}x{1}", rows, columns);
+                        //Console.WriteLine("Taille de la map : {0}x{1}", rows, columns);
                         break;
                     }
 
@@ -137,7 +138,7 @@ namespace DeepWerewolf
                         //On lit un byte qui correspond au nombre d'humains dans la grille
                         byte[] buffer = new byte[2] { BR.ReadByte(), (byte)0 };
                         int numberofHouses = BitConverter.ToInt16(buffer, 0);
-                        Console.WriteLine("Nombre de maisons : {0}", numberofHouses);
+                        //Console.WriteLine("Nombre de maisons : {0}", numberofHouses);
 
                         //On lit ensuite autant de paires d'octets que de maisons pour connaitre les coordonnees des maisons
                         for (int i=0; i<numberofHouses; i++)
@@ -154,7 +155,7 @@ namespace DeepWerewolf
                             Humans h = new Humans(1);
                             Monsters m = new Monsters(0, false);
                             currentMap.setTile(X, Y, h, m);
-                            Console.WriteLine("Maison {0} : coordonnées ({1},{2})", i+1, X, Y);
+                            //Console.WriteLine("Maison {0} : coordonnées ({1},{2})", i+1, X, Y);
                         }
                         break;
                     }
@@ -176,7 +177,7 @@ namespace DeepWerewolf
 
                         currentMap.setStartTile(abs, ord);
 
-                        Console.WriteLine("Notre case de départ : ({0},{1})", abs, ord);
+                        //Console.WriteLine("Notre case de départ : ({0},{1})", abs, ord);
                         break;
                     }
 
@@ -238,7 +239,7 @@ namespace DeepWerewolf
 
                                         if (print_espece)
                                         {
-                                            Console.WriteLine("Nous sommes les {0}s", espece);
+                                            //Console.WriteLine("Nous sommes les {0}s", espece);
                                         }
                                     }
                                     else
@@ -248,7 +249,7 @@ namespace DeepWerewolf
 
                                         if (print_espece)
                                         {
-                                            Console.WriteLine("Nous sommes les {0}s", espece);
+                                            //Console.WriteLine("Nous sommes les {0}s", espece);
                                         }
 
                                     }
@@ -257,11 +258,11 @@ namespace DeepWerewolf
 
                                     if (m.isEnemy)
                                     {
-                                        Console.WriteLine("({0},{1}) : {2} individus de l'espèce adverse", X, Y, monsters);
+                                        //Console.WriteLine("({0},{1}) : {2} individus de l'espèce adverse", X, Y, monsters);
                                     }
                                     else
                                     {
-                                        Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
+                                        //Console.WriteLine("({0},{1}) : {2} individus de notre espèce", X, Y, monsters);
                                     }
                                         
                                     
@@ -273,7 +274,7 @@ namespace DeepWerewolf
                                     Monsters m = new Monsters(monsters, false);
 
                                     currentMap.setTile(X, Y, h, m);
-                                    Console.WriteLine("({0},{1}) : {2} individus humains", X, Y, human_number);
+                                    //Console.WriteLine("({0},{1}) : {2} individus humains", X, Y, human_number);
                                 }
                             }
                             else
@@ -312,7 +313,7 @@ namespace DeepWerewolf
                                 currentMap.setTile(X, Y, h, m);
 
                                 //Affichage du changement dans la console
-                                Console.WriteLine("Changement {0} : ({1},{2}) : {3} humains, {4} congénères, {5} ennemis", i + 1, X, Y, currentMap.getTile(X, Y).preys(), currentMap.getTile(X, Y).allies(), currentMap.getTile(X, Y).enemies());
+                                //Console.WriteLine("Changement {0} : ({1},{2}) : {3} humains, {4} congénères, {5} ennemis", i + 1, X, Y, currentMap.getTile(X, Y).preys(), currentMap.getTile(X, Y).allies(), currentMap.getTile(X, Y).enemies());
 
                                 
                             }
@@ -320,7 +321,7 @@ namespace DeepWerewolf
 
                         if (order == "UPD")
                         {
-                            Console.WriteLine("Il y a eu {0} changements. A nous de jouer", changes);
+                            //Console.WriteLine("Il y a eu {0} changements. A nous de jouer", changes);
                         }
                         break;
                     }
@@ -350,14 +351,18 @@ namespace DeepWerewolf
             BW.Write(n);
 
             //On envoie ensuite chaque mouvement
+
+            Console.Write("Envoyé : ");
             foreach (int[] move in movements)
             {
+                Console.Write("[ {0} {1} {2} {3} {4} ] ", move[0], move[1], move[2], move[3], move[4]);
                 byte X_start = (byte)move[0];
                 byte Y_start = (byte)move[1];
                 byte people = (byte)move[2];
                 byte X_end = (byte)move[3];
                 byte Y_end = (byte)move[4];
 
+                
                 BW.Write(X_start);
                 BW.Write(Y_start);
                 BW.Write(people);
@@ -366,6 +371,7 @@ namespace DeepWerewolf
 
 
             }
+            Console.Write("\n");
 
         }
 
@@ -438,8 +444,8 @@ namespace DeepWerewolf
 
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
-            List<int[]> movements = calcul_meilleur_coup(2);
-            Thread.Sleep(time_delay*1000 - 500);
+            List<int[]> movements = calcul_meilleur_coup(1);
+            //Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
 
@@ -469,9 +475,18 @@ namespace DeepWerewolf
                 double[] tmp = new double[moves.Count];
                 int i = 0;
 
+
+                //---- Version multi thread ------
+
                 for (i = 0; i < moves.Count; i++)
                 {
-                    List<int[]> move = moves[i];
+                    List<int[]> move = new List<int[]>();
+
+                    foreach (var action in moves[i])
+                    {
+                        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
+                    }
+
                     GameMap mapATester = currentMap.interprete_moves(move);
                     List<object> parameters = new List<object>();
                     parameters.Add(mapATester);
@@ -480,16 +495,7 @@ namespace DeepWerewolf
                     parameters.Add(i);
                     parameters.Add(alpha);
                     parameters.Add(beta);
-                    //On lance un thread pour évaluer la qualité de ce move
-                    //Thread thr = new Thread( 
-                    //    () => 
-                    //    {
-                    //        double value = calcul_Min(mapATester, profondeur - 1);
-                    //        lock (tmp)
-                    //        {
-                    //            tmp[i] = value;
-                    //        }
-                    //    });
+
 
                     //On lance un thread pour 
                     Thread thr = new Thread(thread_calcul_min);
@@ -502,9 +508,19 @@ namespace DeepWerewolf
                 }
 
                 //On attend la fin de tous les threads
+                int counter = 0;
                 foreach (Thread t in thread_list)
                 {
-                    t.Join();
+                    t.Join(500);
+                    try
+                    {
+                        t.Abort();
+                    }
+                    catch
+                    {
+
+                    }
+                    counter++;
                 }
 
                 for (i = 0; i < moves.Count; i++)
@@ -512,13 +528,47 @@ namespace DeepWerewolf
 
                     if (tmp[i] > max)
                     {
-                        if (tmp[i] != -10000)
+                        if (tmp[i] != -10000 || k >= profondeur)
                         {
-                            max = tmp[i];
-                            move_to_do = moves[i];
+                            if (currentMap.is_valid_move(moves[i]))
+                            {
+                                max = tmp[i];
+                                move_to_do = moves[i];
+                            }
                         }
                     }
                 }
+
+                //--------------------------------------------------
+
+                //----Version monothread
+
+                //for (i = 0; i < moves.Count; i++)
+                //{
+                    
+                //    List<int[]> move = new List<int[]>();
+
+                //    foreach (var action in moves[i])
+                //    {
+                //        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
+                //    }
+
+                //    GameMap mapATester = currentMap.interprete_moves(move);
+                //    double temp = alpha;
+                //    alpha = Math.Max(alpha, calcul_Min(mapATester, profondeur - 1, alpha, beta));
+                //    if (alpha > temp)
+                //    {
+                //        if (alpha != -10000)
+                //        {
+                //            move_to_do = moves[i];
+                //        }
+                //    }
+                //}
+
+
+                //--------------------------
+
+                
                 k++;
             }
             return move_to_do;
@@ -526,7 +576,8 @@ namespace DeepWerewolf
 
         public void thread_calcul_min(object parameters)
         {
-            //méthode appelée dans chaque thread lancé par calcul meilleur coup 
+            //méthode appelée dans chaque thread lancé par calcul meilleur coup
+            //parameters contient : mapATester, profondeur,  
 
             GameMap mapATester = (GameMap)((List<object>)parameters)[0];
             int profondeur = (int)((List<object>)parameters)[1];
@@ -568,8 +619,14 @@ namespace DeepWerewolf
             else
             {
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(false);
-                foreach (List<int[]> move in possibleMoves)
+                for (int i=0; i < possibleMoves.Count; i++)
                 {
+                    List<int[]> move = new List<int[]>();
+                    foreach (var action in possibleMoves[i])
+                    {
+                        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
+                    }
+
                     GameMap newMap = MapATester.interprete_moves(move);
                     alpha = Math.Max(alpha, calcul_Min(newMap, profondeur - 1, alpha, beta));
                     if (alpha > beta)
@@ -589,7 +646,7 @@ namespace DeepWerewolf
 
         public double calcul_Min(GameMap MapATester, int profondeur, double alpha, double beta)
         {
-            Console.WriteLine("Starting calculMin...");
+            //Console.WriteLine("Starting calculMin...");
             bool[] end_game = MapATester.game_over();
 
             if (end_game[0])
@@ -615,8 +672,14 @@ namespace DeepWerewolf
             {
                 //Hello
                 List<List<int[]>> possibleMoves = MapATester.calculate_moves(true);
-                foreach (List<int[]> move in possibleMoves)
+                for (int i = 0; i < possibleMoves.Count; i++)
                 {
+                    List<int[]> move = new List<int[]>();
+                    foreach (var action in possibleMoves[i])
+                    {
+                        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
+                    }
+
                     GameMap newMap = MapATester.interprete_moves(move);
                     beta = Math.Min(beta, calcul_Max(newMap, profondeur - 1, alpha, beta));
                     if (beta < alpha)
@@ -640,35 +703,36 @@ namespace DeepWerewolf
         {
 
             Program myGame = new Program(args);
-            //myGame.initConnection(myGame.serverIP, myGame.serverPort);
+            myGame.initConnection(myGame.serverIP, myGame.serverPort);
 
-            myGame.currentMap = new GameMap(5, 10);
-            myGame.currentMap.setTile(2, 2, 0, 3, false);
-            //myGame.currentMap.setTile(4, 3, 0, 4, false);
-            //myGame.currentMap.setTile(5, 2, 0, 4, false);
-            //myGame.currentMap.setTile(8, 2, 0, 4, false);
-
-            myGame.currentMap.calculate_moves(false);
+            //myGame.currentMap = new GameMap(5, 10);
+            //myGame.currentMap.setTile(7, 0, 0, 1, false);
+            //myGame.currentMap.setTile(7, 1, 0, 3, false);
+            //myGame.currentMap.setTile(9, 0, 2, 0, false);
+            //myGame.currentMap.setTile(9, 2, 1, 0, false);
+            //myGame.currentMap.setTile(9, 4, 2, 0, false);
+            //myGame.currentMap.setTile(4, 0, 0, 8, true);
+            //myGame.currentMap.calculate_moves(false);
             //GameMap new_map = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 4, 4, 3 } });
-            //Console.WriteLine("Allies en ({0}, {1}) sur currentMap : {2}\nAllies en ({0}, {1}) sur newMap : {3}", 4, 3, myGame.currentMap.getTile(4, 3).allies(), new_map.getTile(4, 3).allies());
+            ////Console.WriteLine("Allies en ({0}, {1}) sur currentMap : {2}\nAllies en ({0}, {1}) sur newMap : {3}", 4, 3, myGame.currentMap.getTile(4, 3).allies(), new_map.getTile(4, 3).allies());
             //currentMap2.setTile(4, 1, 0, 25, false);
             //currentMap2.setTile(4, 2, 0, 40, true);
             //currentMap2.setTile(4, 3, 0, 25, false);
             //GameMap new_map = currentMap2.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 25, 4, 2 }, new int[5] {4, 1, 25, 4, 2 } });
-            //Console.WriteLine($"allies : {new_map.getTile(4, 2).allies()}");
+            ////Console.WriteLine($"allies : {new_map.getTile(4, 2).allies()}");
             //Thread.Sleep(5000);
             //double[] res = myGame.currentMap.esperance_attaque(myGame.currentMap.getTile(4, 3), myGame.currentMap.getTile(2, 2));
-            //Console.WriteLine($"{res[0]} {res[1]}");
+            ////Console.WriteLine($"{res[0]} {res[1]}");
 
             //var result1 = myGame.currentMap.game_over();
-            //Console.WriteLine($"{result1[0]}  {result1[1]}");
+            ////Console.WriteLine($"{result1[0]}  {result1[1]}");
             //GameMap testmap = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 5, 0, 6, 6, 0 } });
             //var result2 = testmap.game_over();
-            //Console.WriteLine($"{result2[0]}  {result2[1]}");
+            ////Console.WriteLine($"{result2[0]}  {result2[1]}");
 
             ////Tile t1 = new Tile(1, 1, 4, 0, false);
             //Tile t2 = new Tile(1, 1, 4, 0, false);
-            ////Console.WriteLine(t1.Equals(t2));
+            //////Console.WriteLine(t1.Equals(t2));
 
             ////myGame.currentMap.heuristique_2();
 
@@ -683,8 +747,8 @@ namespace DeepWerewolf
             //myGame.currentMap.setTile(9, 2, 1, 0, false); //1 humains en 9,2
             //myGame.currentMap.setTile(9, 4, 2, 0, false); //2 humains en 9,4
 
-            ////Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, mode));
-            //Console.WriteLine("Favorabilite du plateau : {0}\n", myGame.currentMap.heuristique_2());
+            //////Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle(seuil, mode));
+            ////Console.WriteLine("Favorabilite du plateau : {0}\n", myGame.currentMap.heuristique_2());
 
             //List<int[]> coords = new List<int[]> { new int[2] { 5, 3 }, new int[2] { 5, 2 }, new int[2] { 4, 2 }, new int[2] { 3, 2 }, new int[2] { 3, 3 }, new int[2] { 3, 4 }, new int[2] { 4, 4 }, new int[2] { 5, 4 } };
             ////On teste toutes les cases à cote de nous
@@ -692,8 +756,8 @@ namespace DeepWerewolf
             //{
             //    myGame.currentMap.setTile(4, 3, 0, 0, false);
             //    myGame.currentMap.setTile(c[0], c[1], 0, 4, false);
-            //    //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.oracle(seuil, mode), c[0], c[1]);
-            //    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}\n", myGame.currentMap.heuristique_2(), c[0], c[1]);
+            //    ////Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}", myGame.currentMap.oracle(seuil, mode), c[0], c[1]);
+            //    //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) : {0}\n", myGame.currentMap.heuristique_2(), c[0], c[1]);
             //    myGame.currentMap.setTile(c[0], c[1], 0, 0, false);
             //    myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
 
@@ -710,8 +774,8 @@ namespace DeepWerewolf
             //        myGame.currentMap.setTile(4, 3, 0, 0, false);
             //        myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
             //        myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
-            //        //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.oracle(seuil, 2), group1[0], group1[1], group2[0], group2[1]);
-            //        Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}\n", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
+            //        ////Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.oracle(seuil, 2), group1[0], group1[1], group2[0], group2[1]);
+            //        //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}\n", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
             //        myGame.currentMap.setTile(group1[0], group1[1], 0, 0, false);
             //        myGame.currentMap.setTile(group2[0], group2[1], 0, 0, false);
             //        myGame.currentMap.setTile(4, 3, 0, 4, false); //4 congénères en 4,3
@@ -721,7 +785,7 @@ namespace DeepWerewolf
             //        //    myGame.currentMap.setTile(4, 3, 0, 0, false);
             //        //    myGame.currentMap.setTile(group1[0], group1[1], 0, 2, false);
             //        //    myGame.currentMap.setTile(group2[0], group2[1], 0, 2, false);
-            //        //    Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
+            //        //    //Console.WriteLine("Favorabilite du plateau si on va en ({1}, {2}) et ({3}, {4}) : {0}", myGame.currentMap.heuristique_2(), group1[0], group1[1], group2[0], group2[1]);
 
             //        //}
 
@@ -732,9 +796,9 @@ namespace DeepWerewolf
             {
                 //on reçoit la trame UPD
                 myGame.receive_frame();
-                Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle());
+                //Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle());
 
-                //on tape une commande de mouvement
+                //on envoie une commande de mouvement
 
                 if (myGame.isPlaying)
                 {
@@ -748,7 +812,7 @@ namespace DeepWerewolf
             //var moves = new List<int[]>();
             //moves.Add(new int[5] { 4, 3, 3, 4, 1 });
             //myGame.currentMap.interprete_moves(moves);
-            //Console.WriteLine(myGame.currentMap.getTile(4, 1).enemies());
+            ////Console.WriteLine(myGame.currentMap.getTile(4, 1).enemies());
 
         }
     }
