@@ -84,7 +84,7 @@ namespace DeepWerewolf
 
         }
 
-        public bool is_valid_move(GameMap map,List<int[]> moves)
+        public bool is_valid_move(List<int[]> moves)
         {
             if (moves.Count == 0)
             {
@@ -92,10 +92,14 @@ namespace DeepWerewolf
             }
             List<Tile> destinationTiles = new List<Tile>();
             List<Tile> sourceTiles = new List<Tile>();
+            int total_number = 0;
+            int monsters_moved = 0;
             foreach (int[] move in moves)
             {
-                Tile sourceTile = map.getTile(move[0], move[1]);
-                Tile destinationTile = map.getTile(move[3], move[4]);
+                Tile sourceTile = this.getTile(move[0], move[1]);
+                Tile destinationTile = this.getTile(move[3], move[4]);
+                monsters_moved += move[2];
+
                 if (sourceTile.preys() != 0 || sourceTile.monstres.number < move[2])
                 {
                     return false; // Il ne faut pas qu'il y ait d'humains dans la tuile ou que la demande dépasse le nb de pions disponibles
@@ -107,8 +111,11 @@ namespace DeepWerewolf
                 sourceTiles.Add(sourceTile);
                 destinationTiles.Add(destinationTile);
             }
+
+            
             foreach (Tile source in sourceTiles)
             {
+                total_number += source.monstres.number;
                 foreach (Tile destination in destinationTiles)
                 {
                     if (destination == source)
@@ -117,13 +124,30 @@ namespace DeepWerewolf
                     }
                 }
             }
+
+            if (total_number < monsters_moved)
+            {
+                //On ne peut pas déplacer plus de monstres que de monstres disponibles
+                return false;
+            }
             return true;
         }
 
         public GameMap interprete_moves(List<int[]> moves)
         {
-            GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
             //Renvoie un objet GameMap qui applique les mouvements représentés par moves sur l’objet GameMap qui appelle la fonction.
+
+            GameMap newMap = new GameMap (this.size_x, this.size_y, this.tuiles,  this.startTile);
+            bool enemyMove = false; //indique si c'est nous ou l'ennemi qui joue
+
+            //On commence par créer une copie de la liste de moves
+            List<int[]> moves_copy = new List<int[]>();
+            foreach (int[] move in moves)
+            {
+                moves_copy.Add(new int[5] { move[0], move[1], move[2], move[3], move[4] });
+            }
+
+            //Puis on interprète la totalité des moves représentés par ces tableaux d'entier
             foreach (int[] move in moves)
             {                
                 if (move[2] != 0)
@@ -141,7 +165,7 @@ namespace DeepWerewolf
                     }
                     Tile sourceTile = newMap.getTile(move[0], move[1]);
                     Tile destination = newMap.getTile(move[3], move[4]);
-                    bool enemyMove = false; // Nous dit si c'est nous qui jouons à ce tour ou non
+                    
                     int monstersAtDestination;
                     int opposedForcesAtDestination;
                     if (sourceTile.allies() != 0) // Il y a des alliés dans la case départ
@@ -172,26 +196,40 @@ namespace DeepWerewolf
                         int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
                         newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
                     }
-                    // A la fin, on déplace les alliés de la case départ
-                    newMap.setTile(sourceTile.coord_x, sourceTile.coord_y, 0, sourceTile.monstres.number - move[2], enemyMove);
+                    
                 }
                 
             }
+
+            // A la fin, on met à jour le nombre de monstres restants sur les cases de départ des moves
+            foreach (int[] move in moves_copy)
+            {
+                Tile source = newMap.getTile(move[0], move[1]);
+                newMap.setTile(source.coord_x, source.coord_y, 0, source.monstres.number - move[2], enemyMove);
+            }
+
             // Si le mouvement n'est pas valide, on ne le traite pas
             return newMap;
         }
 
-        public bool consider_split(Tile tuile)
-        {   
-            // Renvoie un booléen qui nous indique s'il est pertinent de séparer deux groupes
-            foreach (Tile tuileVoisin in this.tuiles)
-            {
-                if (distance(tuile, tuileVoisin) <= 3 && tuileVoisin.preys() != 0 && tuileVoisin.preys() <= tuile.monstres.number/2)
-                {
-                    return true;
-                }
-            }
-            return false;
+        public bool consider_split(Tile tuile, int total_groups, int human_groups, int min_humans)
+        {
+            // Renvoie un booléen qui nous indique s'il est pertinent de séparer en deux groupes
+            // Deux conditions doivent être remplies pour tester le split : 
+            // - le nombre de groupes d'humains est supérieur au nombre de groupes d'alliés
+            // - le nombre minimum d'humains sur une case est strictement inférieur au nombre d'alliés sur la tuile
+
+            
+            //foreach (Tile voisin in this.tuiles)
+            //{
+            //    if (distance(tuile, voisin) <= 3 && voisin.preys() != 0 && voisin.preys() <= tuile.monstres.number/2)
+            //    {
+            //        return true;
+            //    }
+            //}
+
+            return total_groups < human_groups && min_humans < tuile.monstres.number;
+            
         }
 
         public List<List<int[]>> calculate_group_moves(Tile group_Tile, bool split)
@@ -217,6 +255,7 @@ namespace DeepWerewolf
                 }
 
                 if (split & number > 1) //ensuite avec split
+
                 {
 
                     for (int i = 0; i < len; i++)
@@ -372,11 +411,40 @@ namespace DeepWerewolf
 
             //Remarque : il sera peut - être nécessaire d’optimiser cette fonction pour ne pas renvoyer de moves absurdes, mais pour l’instant, on renvoie tout.
 
-            Console.WriteLine("Starting calculate_moves...");
+            //////Console.WriteLine("Starting calculate_moves...");
             List<List<int[]>> result = new List<List<int[]>>();
             Dictionary<int, List<List<int[]>>> group_moves = new Dictionary<int, List<List<int[]>>>();
 
             int i = 1;
+
+            //On commence par scanner la map pour calculer les paramètres nécessaires à la condition de split : 
+            // - nombre de groupes d'humains sur la map
+            // - nombre de groupes de monstres sur la map
+            // - nombre minimal d'humains dans une case du plateau
+
+            int human_groups = 0;
+            int monsters_groups = 0;
+            int min_humans = 10000;
+
+            foreach (Tile t in tuiles)
+            {
+                int preys = t.preys();
+                int monstres = t.monstres.number;
+                bool is_enemy = t.monstres.isEnemy;
+
+                if (preys > 0)
+                {
+                    human_groups++;
+                    min_humans = Math.Min(min_humans, preys);
+                }
+
+                else if (monstres > 0)
+                {
+                    monsters_groups = enemy == is_enemy ? monsters_groups + 1 : monsters_groups; //on incrémente monsters_groups si c'est un groupe de monstres de celui dont on calcule le coup
+
+                }
+            }
+
 
             //On calcule tous les moves possibles pour chacun des groupes présents sur la map
             foreach (Tile Tuile in tuiles)
@@ -386,7 +454,7 @@ namespace DeepWerewolf
                     if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé (allie ou ennemi)
                     {
                         //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
-                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile));
+                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile, monsters_groups, human_groups, min_humans));
                         //List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, true);
 
                         group_moves.Add(i, group_moves_list );
@@ -455,24 +523,28 @@ namespace DeepWerewolf
                     action.AddRange(group_moves[k][list[k - 1]]);
                 }
 
-                result.Add(action);
+                if (is_valid_move(action))
+                {
+                    result.Add(action);
+                }
 
                 //-----Affichage---------
                 //foreach (int[] move in action)
                 //{
-                //    Console.Write("[ ");
+                //    ////Console.Write("[ ");
                 //    for (int k = 0; k < move.Length; k++)
                 //    {
-                //        Console.Write("{0} ", move[k]);
+                //        ////Console.Write("{0} ", move[k]);
                 //    }
-                //    Console.Write("] ");
+                //    ////Console.Write("] ");
 
                 //}
-                //Console.Write("\n");
+                //////Console.Write("\n");
 
                 //-----------------------
             }
 
+            //////Console.WriteLine("Nombres de moves : {0}", result.Count);
             return result;
         }
 
@@ -490,32 +562,33 @@ namespace DeepWerewolf
                 {
                     if (str[j] == '1')
                     {
-                        //Console.Write(list[j]);
+                        ////////Console.Write(list[j]);
                         combination.Add(list[j]);
                     }
                 }
-                //Console.WriteLine();
+                ////////Console.WriteLine();
                 result.Add(combination);
             }
 
             return result;
         }
 
-        public double oracle()
+        public double oracle(bool enemy_will_play)
         {
-            return heuristique_2();
+            return heuristique_2(enemy_will_play);
         }
 
-        public double heuristique_2()
+        public double heuristique_2(bool enemy_will_play)
         {
             //Cette fonction va attribuer à chaque groupe de monstres le ou les groupes d'humains qu'il peut convertir
-            Console.WriteLine("Starting heuristique_2...");
+            //////Console.WriteLine("Starting heuristique_2...");
             //On commence par repérer les groupes d'alliés et d'ennemis
             List<Tile> allies_to_attribute = new List<Tile>();
             List<Tile> enemies_to_attribute = new List<Tile>();
             List<Tile> human_groups = new List<Tile>();
             int number_of_allies = 0;
             int number_of_enemies = 0;
+            int min_number_of_humans = 10000;
 
             foreach (Tile t in tuiles)
             {
@@ -542,7 +615,7 @@ namespace DeepWerewolf
                                 if (t.enemies() < enemies_to_attribute[i].enemies())
                                 {
                                     found = true;
-                                    i0 = 0;
+                                    i0 = i;
                                     //on décale toutes les autres cases dans la liste
                                     for (int j = enemies_to_attribute.Count - 2; j >= i; j--)
                                     {
@@ -554,7 +627,7 @@ namespace DeepWerewolf
                             
                         }
                         //on insère cette case dans la liste
-                        enemies_to_attribute[i0] = t;
+                        enemies_to_attribute[i0] = new Tile(t.coord_x, t.coord_y, t.preys(), t.enemies(), true);
                     }
 
                 }
@@ -592,12 +665,14 @@ namespace DeepWerewolf
                             
                         }
                         //on insère cette case dans la liste
-                        allies_to_attribute[i0] = t;
+                        allies_to_attribute[i0] = new Tile(t.coord_x, t.coord_y, t.preys(), t.allies(), false);
                     }
                 }
 
                 else if (t.preys() > 0)
                 {
+                    min_number_of_humans = Math.Min(t.preys(), min_number_of_humans);
+
                     //on remplit notre liste ordonnée suivant le nombre d'humains dans les cases
                     if (human_groups.Count == 0)
                     {
@@ -628,7 +703,7 @@ namespace DeepWerewolf
                             
                         }
                         //on insère cette case dans la liste
-                        human_groups[i0] = t;
+                        human_groups[i0] = new Tile(t.coord_x, t.coord_y, t.preys(), t.monstres.number, false);
                     }
                     
                 }
@@ -667,6 +742,17 @@ namespace DeepWerewolf
             while (enemies_to_attribute.Count > 0 || allies_to_attribute.Count > 0)
             {
                 //on va parcourir les tiles d'allies de la moins peuplée à la plus peuplée
+
+                //if (allies_to_attribute.Count == 3)
+                //{
+                //    foreach (Tile t in allies_to_attribute)
+                //    {
+                //        if (t.coord_x == 7 && t.coord_y == 1)
+                //        {
+                //            //qqch
+                //        }
+                //    }
+                //}
 
                 bool allPossibleAlliesAffected = true;
 
@@ -743,13 +829,13 @@ namespace DeepWerewolf
                         //on vérifie d'abord qu'il n'y a pas un autre groupe qui se situerait sur le chemin vers ce groupe d'humain
                         int max_bis = 0;
                         int new_best_i = best_i;
-                        Tile target_tile = dispo_allies[best_i];
+                        Tile target_tile = dispo_allies[new_best_i];
                         for (int index = 0; index < dispo_allies.Count; index++)
                         {
                             Tile t = dispo_allies[index];
                             if (!(t.coord_x == fictive_allie.coord_x && t.coord_y == fictive_allie.coord_y) && !(t.Equals(dispo_allies[best_i])))
                             {
-                                if (is_between(t, fictive_allie, dispo_allies[best_i]) && t.preys() > max_bis)
+                                if (is_between(t, fictive_allie, dispo_allies[best_i]) && t.preys() <= fictive_allie.allies() && t.preys() > max_bis)
                                 {
                                     target_tile = t;
                                     max_bis = t.preys();
@@ -795,6 +881,12 @@ namespace DeepWerewolf
                         
 
                         int d_min_enemies = distance_min(new_enemies, target_tile, offsets);
+                        if (enemy_will_play)
+                        {
+                            //C'est à l'ennemi de jouer, donc il faut diminuer sa distance aux cibles de 1 pour en tenir compte
+                            d_min_enemies -= 1;
+                        }
+
                         int d = distance(fictive_allie, target_tile) + ((int[])allies_groups[allie])[3];
 
                         if (d_min_enemies >= d)
@@ -812,7 +904,7 @@ namespace DeepWerewolf
                             dispo_allies.RemoveAt(new_best_i);
 
 
-                            if (d_min_enemies > d)
+                            //if (d_min_enemies > d || (enemy_will_play && d_min_enemies == d))
                             {
                                 //aucun groupe d'enemies ne peut attaquer cette case, donc on la retire aussi des cases dispo
                                 //pour les ennemis
@@ -965,7 +1057,7 @@ namespace DeepWerewolf
                             Tile t = dispo_enemies[index];
                             if (!(t.coord_x == fictive_enemie.coord_x && t.coord_y == fictive_enemie.coord_y) && !(t.Equals(dispo_enemies[best_i])))
                             {
-                                if (is_between(t, fictive_enemie, dispo_enemies[best_i]) && t.preys() > max_bis)
+                                if (is_between(t, fictive_enemie, dispo_enemies[best_i]) && t.preys() <= fictive_enemie.enemies() && t.preys() > max_bis)
                                 {
                                     target_tile = t;
                                     max_bis = t.preys();
@@ -1007,6 +1099,13 @@ namespace DeepWerewolf
 
 
                         int d_min_allies = distance_min(new_allies, target_tile, offsets);
+
+                        if (!enemy_will_play)
+                        {
+                            //C'est à nous de jouer, donc il faut que l'ennemi en tienne compte
+                            d_min_allies -= 1;
+                        }
+
                         int d = distance(fictive_enemie, target_tile) + ((int[])enemies_groups[enemie])[3];
 
                         if (d_min_allies >= d)
@@ -1024,7 +1123,7 @@ namespace DeepWerewolf
                             dispo_enemies.RemoveAt(new_best_i);
 
 
-                            if (d_min_allies > d)
+                            //if (d_min_allies > d || (!(enemy_will_play) && d_min_allies == d))
                             {
                                 //aucun groupe d'allies ne peut attaquer cette case, donc on la retire aussi des cases dispo
                                 //pour les ennemis
@@ -1093,17 +1192,18 @@ namespace DeepWerewolf
             }
 
             //Affichage du contenu des dictionnaires et calcul final de la valeur à renvoyer
-            Console.WriteLine("Dictionnaire allies :");
+            //Console.WriteLine("Dictionnaire allies :");
             double res = 0.0;
             int n_gr_allies = 0;
             int n_gr_enemies = 0;
             int c = 0;
             int total_dist = 0;
             bool global_distance_considered = false;
+            int additional_allies = 0;
             Tile previous_group = new Tile(0, 0, 0, 0, false);
             foreach (Tile t in allies_groups.Keys)
             {
-                Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
+                //Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])allies_groups[t])[0], ((int[])allies_groups[t])[3]);
 
                 //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
                 n_gr_allies++;
@@ -1114,51 +1214,58 @@ namespace DeepWerewolf
 
                 c++;
                 previous_group = t;
+                additional_allies += ((int[])allies_groups[t])[0] - t.allies();
 
                 //on met à jour res
-                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.75 + 1.0 / (((int[])allies_groups[t])[3] + 4));
+                res = res + (double)t.allies() + (double)(((int[])allies_groups[t])[0] - t.allies())*(0.9 + 1.0 / (((int[])allies_groups[t])[3] + 10));
             }
 
             //Une fois qu'on a la distance totale, on ajoute à res le terme qui représente la distance entre les groupes
-            if (n_gr_allies > 0)
-            {
-                res = res + (double)(1 / n_gr_allies);
-            }
 
-
-            if (n_gr_allies > 1)
+            //if (additional_allies == 0)
             {
-                res = res + (1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / total_dist);
-            }
-
-            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
-            if (n_gr_allies == 1)
-            {
-                total_dist = 0;
-                foreach (Tile allie in allies_groups.Keys)
+                
+                //le terme qui encourage l'IA à se rassembler
+                if (n_gr_allies > 1)
                 {
-                    foreach (Tile enemie in enemies_groups.Keys)
-                    {
-                        total_dist += distance(allie, enemie);
-                    }
+                    res = res + 0.1 * ((1.0 / (n_gr_allies - 1) - 1.0 / n_gr_allies) * (0.75 + 1.0 / (total_dist + 5)));
                 }
 
-                res += 1.0 / (total_dist + 50);
-                global_distance_considered = true;
+                else if (n_gr_allies > 0)
+                {
+                    res = res + 0.1 * (double)(1 / n_gr_allies);
+                }
+
+
+                //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+                if (n_gr_allies == 1)
+                {
+                    total_dist = 0;
+                    foreach (Tile allie in allies_groups.Keys)
+                    {
+                        foreach (Tile enemie in enemies_groups.Keys)
+                        {
+                            total_dist += distance(allie, enemie);
+                        }
+                    }
+
+                    res += 1.0 / (total_dist + 5000);
+                    global_distance_considered = true;
+                }
+
             }
 
-            
-
-            Console.WriteLine("");
+            //Console.WriteLine("");
 
             c = 0;
             total_dist = 0;
-            Console.WriteLine("Dictionnaire enemies :");
+            int additional_enemies = 0;
+            //Console.WriteLine("Dictionnaire enemies :");
 
             foreach (Tile t in enemies_groups.Keys)
             {
-                Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
-
+                //Console.WriteLine("({0}, {1}) : {2} monstres au final, distance totale : {3}", t.coord_x, t.coord_y, ((int[])enemies_groups[t])[0], ((int[])enemies_groups[t])[3]);
+            
                 //on incrémente le nombre de groupes et la distance totale qui sépare les groupes
                 n_gr_enemies++;
                 if (c > 0)
@@ -1166,42 +1273,48 @@ namespace DeepWerewolf
                     total_dist += distance(previous_group, t);
                 }
 
+                additional_enemies += ((int[])enemies_groups[t])[0] - t.enemies();
                 c++;
                 previous_group = t;
 
-                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.75 + 1.0 / (((int[])enemies_groups[t])[3] + 4));
+                res = res - (double)t.enemies() - (double)(((int[])enemies_groups[t])[0] - t.enemies())*(0.9 + 1.0 / (((int[])enemies_groups[t])[3] + 10));
             }
 
-            //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes
-            if (n_gr_enemies > 0)
-            {
-                res = res - 1.0 / n_gr_enemies;
-            }
-           
-            if (n_gr_enemies > 1)
-            {
-                res = res - (1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / total_dist);
-            }
+            //Une fois qu'on a la distance totale, on retire à res le terme qui représente la distance entre les groupes (uniquement s'il n'y a plus d'humains)
 
-            //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
-            if (n_gr_enemies == 1)
+            //if (additional_enemies == 0)
             {
-                if (!global_distance_considered)
+                
+                // le terme qui encourage l'IA à se rassembler
+                if (n_gr_enemies > 1)
                 {
-                    total_dist = 0;
-                    foreach (Tile enemie in enemies_groups.Keys)
-                    {
-                        foreach (Tile allie in allies_groups.Keys)
-                        {
-                            total_dist += distance(allie, enemie);
-                        }
-                    }
+                    res = res - 0.1 * ((1.0 / (n_gr_enemies - 1) - 1.0 / n_gr_enemies) * (0.75 + 1.0 / (total_dist + 5)));
+                }
 
-                    res -= 1.0 / (total_dist + 50);
+                else if (n_gr_enemies > 0)
+                {
+                    res = res - 0.1 * (1.0 / n_gr_enemies);
+                }
+
+                //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+                if (n_gr_enemies == 1)
+                {
+                    if (!global_distance_considered)
+                    {
+                        total_dist = 0;
+                        foreach (Tile enemie in enemies_groups.Keys)
+                        {
+                            foreach (Tile allie in allies_groups.Keys)
+                            {
+                                total_dist += distance(allie, enemie);
+                            }
+                        }
+
+                        res -= 1.0 / (total_dist + 5000);
+                    }
                 }
             }
-
-            Console.WriteLine("");
+            //Console.WriteLine("");
 
             
             //On retourne la différence (nombre final + gain potentiel * (0.75 + 1/(distance + 4))allies - (nombre final + gain potentiel * (0.75 + 1/(distance + 4))ennemis
