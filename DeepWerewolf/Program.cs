@@ -8,6 +8,7 @@ using System.Threading;
 using System.IO;
 using System.Net.Sockets;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace DeepWerewolf
 {
@@ -467,110 +468,141 @@ namespace DeepWerewolf
             double max = -100000.0;
             List<int[]> move_to_do = new List<int[]>();
 
-            int k = 0;
+            //On lance une stopwatch pour jouer dans les temps
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
 
-            while (move_to_do.Count == 0)
+            
+            List<Thread> thread_list = new List<Thread>();
+            double[] tmp = new double[moves.Count];
+            int i = 0;
+
+            #region Version multithread
+
+            //---- Version multi thread ------
+
+            while (i < moves.Count && sw.ElapsedMilliseconds < time_limit)
             {
-                List<Thread> thread_list = new List<Thread>();
-                double[] tmp = new double[moves.Count];
-                int i = 0;
+                List<int[]> move = new List<int[]>();
 
-
-                //---- Version multi thread ------
-
-                for (i = 0; i < moves.Count; i++)
+                foreach (var action in moves[i])
                 {
-                    List<int[]> move = new List<int[]>();
-
-                    foreach (var action in moves[i])
-                    {
-                        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
-                    }
-
-                    GameMap mapATester = currentMap.interprete_moves(move);
-                    List<object> parameters = new List<object>();
-                    parameters.Add(mapATester);
-                    parameters.Add(profondeur - k);
-                    parameters.Add(tmp);
-                    parameters.Add(i);
-                    parameters.Add(alpha);
-                    parameters.Add(beta);
-
-
-                    //On lance un thread pour 
-                    Thread thr = new Thread(thread_calcul_min);
-
-                    thread_list.Add(thr);
-
-                    //On lance calcul_min() sur ce move
-                    thr.Start(parameters);
-
+                    move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
                 }
 
-                //On attend la fin de tous les threads
-                int counter = 0;
-                foreach (Thread t in thread_list)
+                GameMap mapATester = currentMap.interprete_moves(move);
+                List<object> parameters = new List<object>();
+                parameters.Add(mapATester);
+                parameters.Add(profondeur);
+                parameters.Add(tmp);
+                parameters.Add(i);
+                parameters.Add(alpha);
+                parameters.Add(beta);
+
+
+                //On crée un thread pour ce move
+                Thread thr = new Thread(thread_calcul_min);
+
+
+                thread_list.Add(thr);
+
+
+                //On lance calcul_min() sur ce move
+                thr.Start(parameters);
+
+
+                i++;
+
+            }
+
+            //On attend la fin de tous les threads, et si le temps est écoulé, on les arrête tous
+            int counter = 0;
+            bool finished = false;
+            while (!finished)
+            {
+                Thread.Sleep(10);
+                if (sw.ElapsedMilliseconds > time_limit)
                 {
-                    t.Join(500);
-                    try
+                    finished = true;
+                }
+            }
+
+            //Une fois qu'on a atteint la limite de temps, on arrête tous les threads
+            foreach (Thread t in thread_list)
+            {
+                //t.Join(500);
+                try
+                {
+                    if (t.IsAlive)
                     {
+                        Console.WriteLine("Thread avorté.");
                         t.Abort();
                     }
-                    catch
+
+                    else
                     {
-
+                        t.Join();
                     }
-                    counter++;
                 }
-
-                for (i = 0; i < moves.Count; i++)
+                catch
                 {
 
-                    if (tmp[i] > max)
-                    {
-                        if (tmp[i] != -10000 || k >= profondeur)
-                        {
-                            if (currentMap.is_valid_move(moves[i]))
-                            {
-                                max = tmp[i];
-                                move_to_do = moves[i];
-                            }
-                        }
-                    }
                 }
-
-                //--------------------------------------------------
-
-                //----Version monothread
-
-                //for (i = 0; i < moves.Count; i++)
-                //{
-                    
-                //    List<int[]> move = new List<int[]>();
-
-                //    foreach (var action in moves[i])
-                //    {
-                //        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
-                //    }
-
-                //    GameMap mapATester = currentMap.interprete_moves(move);
-                //    double temp = alpha;
-                //    alpha = Math.Max(alpha, calcul_Min(mapATester, profondeur - 1, alpha, beta));
-                //    if (alpha > temp)
-                //    {
-                //        if (alpha != -10000)
-                //        {
-                //            move_to_do = moves[i];
-                //        }
-                //    }
-                //}
-
-
-                //--------------------------
-
-                
-                k++;
+                counter++;
             }
+
+            for (i = 0; i < moves.Count; i++)
+            {
+
+                if (tmp[i] > max)
+                {
+
+                    if (currentMap.is_valid_move(moves[i]))
+                    {
+                        max = tmp[i];
+                        move_to_do = moves[i];
+                    }
+
+                }
+            }
+
+            //--------------------------------------------------
+            #endregion Version multithread
+
+            #region Version monothread
+            //----Version monothread
+
+            //for (i = 0; i < moves.Count; i++)
+            //{
+
+            //    List<int[]> move = new List<int[]>();
+
+            //    foreach (var action in moves[i])
+            //    {
+            //        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
+            //    }
+
+            //    GameMap mapATester = currentMap.interprete_moves(move);
+            //    double temp = alpha;
+            //    alpha = Math.Max(alpha, calcul_Min(mapATester, profondeur - 1, alpha, beta));
+            //    if (alpha > temp)
+            //    {
+            //        if (alpha != -10000)
+            //        {
+            //            move_to_do = moves[i];
+            //        }
+            //    }
+            //}
+
+
+            //--------------------------
+            #endregion Version monothread
+
+
+
+            sw.Stop();
+
             return move_to_do;
         }
 
@@ -614,7 +646,7 @@ namespace DeepWerewolf
             if (profondeur == 0)
             {
                 //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
-                return MapATester.oracle();
+                return MapATester.oracle(false); //false parce que c'est à nous de jouer
             }
             else
             {
@@ -666,7 +698,7 @@ namespace DeepWerewolf
             if (profondeur == 0)
             {
                 //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
-                return MapATester.oracle();
+                return MapATester.oracle(true); //true parce que c'est à l'ennemi de jouer dans calcul_min
             }
             else
             {
@@ -704,7 +736,7 @@ namespace DeepWerewolf
 
             Program myGame = new Program(args);
             myGame.initConnection(myGame.serverIP, myGame.serverPort);
-
+            
             //myGame.currentMap = new GameMap(5, 10);
             //myGame.currentMap.setTile(7, 0, 0, 1, false);
             //myGame.currentMap.setTile(7, 1, 0, 3, false);
@@ -734,7 +766,7 @@ namespace DeepWerewolf
             //Tile t2 = new Tile(1, 1, 4, 0, false);
             //////Console.WriteLine(t1.Equals(t2));
 
-            ////myGame.currentMap.heuristique_2();
+            //myGame.currentMap.heuristique_2(false);
 
             ////double seuil = 0.6;
             ////int mode = 1;
