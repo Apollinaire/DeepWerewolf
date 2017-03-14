@@ -448,8 +448,8 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
 
-            
-            List<int[]> movements = calcul_meilleur_coup(2);
+            List<int[]> movements = calcul_meilleur_coup();
+
             //Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
@@ -457,7 +457,7 @@ namespace DeepWerewolf
         }
 
 
-        public List<int[]> calcul_meilleur_coup(int profondeur)
+        public List<int[]> calcul_meilleur_coup()
         {
             //Renvoie un objet List< int[ ]> qui représente le meilleur coup possible
 
@@ -465,17 +465,45 @@ namespace DeepWerewolf
             //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
             //L’objet List< int[] > à renvoyer est le coup qui réalise ce maximum
 
-            //Remarque: S’inspire de IA_jouer du cours Open Classroom
+            //On lance une stopwatch pour jouer dans les temps
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
+
+            // On compte le nombre de groupes d'ennemis sur la map
+            int enemy_groups = 0;
+            for (int x = 0; x < currentMap.size_x; x++)
+            {
+                for (int y = 0; y < currentMap.size_y; y++)
+                {
+                    if (currentMap.getTile(x, y).enemies() != 0)
+                    {
+                        enemy_groups++;
+                    }
+                }
+            }
+            int profondeur;
+            // On régle la profondeur selon le nombre d'ennemis présents dans la map
+            if (enemy_groups >= 6)
+            {
+                profondeur = 0; 
+            }
+            else if ( enemy_groups >= 4)
+            {
+                profondeur = 1;
+            }
+            else
+            {
+                profondeur = 2;
+            }
+
             List<List<int[]>> moves = currentMap.calculate_moves(false);
             double alpha = -100000.0; // On fixe la valeur d'alpha
             double beta = 100000.0; // On fixe la valeur de beta
             double max = -100000.0;
             List<int[]> move_to_do = new List<int[]>();
 
-            //On lance une stopwatch pour jouer dans les temps
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
+            
 
             
             List<Thread> thread_list = new List<Thread>();
