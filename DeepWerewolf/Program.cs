@@ -484,11 +484,11 @@ namespace DeepWerewolf
             }
             int profondeur;
             // On régle la profondeur selon le nombre d'ennemis présents dans la map
-            if (enemy_groups >= 6)
+            if (enemy_groups >= 5)
             {
                 profondeur = 0; 
             }
-            else if ( enemy_groups >= 4)
+            else if ( enemy_groups >= 3)
             {
                 profondeur = 1;
             }
