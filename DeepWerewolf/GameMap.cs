@@ -188,10 +188,11 @@ namespace DeepWerewolf
                     else
                     {
                         // Il s'agit d'une attaque
+                        double seuil = 0.5;
                         Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, move[2], enemyMove);
-                        int AttackersAfterAttack = enemyMove ? move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[1] : move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[0];
-                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[1];
-                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.6)[2];
+                        int AttackersAfterAttack = enemyMove ? move[2] + resultat_attaque(destination, fictiveSourceTile, seuil)[1] : move[2] + resultat_attaque(destination, fictiveSourceTile, seuil)[0];
+                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, seuil)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, seuil)[1];
+                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, seuil)[2];
                         bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
                         int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
                         newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
