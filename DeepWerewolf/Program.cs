@@ -445,6 +445,8 @@ namespace DeepWerewolf
 
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
+
+            
             List<int[]> movements = calcul_meilleur_coup(1);
             //Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
