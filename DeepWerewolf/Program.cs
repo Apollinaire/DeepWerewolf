@@ -471,24 +471,24 @@ namespace DeepWerewolf
             int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
 
             // On compte le nombre de groupes d'ennemis sur la map
-            int enemy_groups = 0;
-            for (int x = 0; x < currentMap.size_x; x++)
+            int groups = 0;
+            for (int x = 0; x < currentMap.size_y; x++)
             {
-                for (int y = 0; y < currentMap.size_y; y++)
+                for (int y = 0; y < currentMap.size_x; y++)
                 {
-                    if (currentMap.getTile(x, y).enemies() != 0)
+                    if (currentMap.getTile(x, y).monstres.number != 0)
                     {
-                        enemy_groups++;
+                        groups++;
                     }
                 }
             }
             int profondeur;
             // On régle la profondeur selon le nombre d'ennemis présents dans la map
-            if (enemy_groups >= 5)
+            if (groups >= 8)
             {
                 profondeur = 0; 
             }
-            else if ( enemy_groups >= 3)
+            else if ( groups >= 5)
             {
                 profondeur = 1;
             }
