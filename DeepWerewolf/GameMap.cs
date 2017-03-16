@@ -188,10 +188,11 @@ namespace DeepWerewolf
                     else
                     {
                         // Il s'agit d'une attaque
+                        double seuil = 0.5;
                         Tile fictiveSourceTile = new Tile(sourceTile.coord_x, sourceTile.coord_y, 0, move[2], enemyMove);
-                        int AttackersAfterAttack = enemyMove ? move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[1] : move[2] + resultat_attaque(destination, fictiveSourceTile, 0.6)[0];
-                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, 0.6)[1];
-                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, 0.6)[2];
+                        int AttackersAfterAttack = enemyMove ? move[2] + resultat_attaque(destination, fictiveSourceTile, seuil)[1] : move[2] + resultat_attaque(destination, fictiveSourceTile, seuil)[0];
+                        int DefendersAfterAttack = enemyMove ? opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, seuil)[0] : opposedForcesAtDestination + resultat_attaque(destination, fictiveSourceTile, seuil)[1];
+                        int HumansAfterAttack = destination.preys() + resultat_attaque(destination, fictiveSourceTile, seuil)[2];
                         bool defenderSurvival = AttackersAfterAttack > DefendersAfterAttack ? false : true;
                         int MonstersAfterAttack = AttackersAfterAttack > DefendersAfterAttack ? AttackersAfterAttack : DefendersAfterAttack;
                         newMap.setTile(destination.coord_x, destination.coord_y, HumansAfterAttack, MonstersAfterAttack, (enemyMove && !defenderSurvival) || (!enemyMove && defenderSurvival));
@@ -212,7 +213,7 @@ namespace DeepWerewolf
             return newMap;
         }
 
-        public bool consider_split(Tile tuile, int total_groups, int human_groups, int min_humans)
+        public bool consider_split(Tile tuile, int total_groups, int max_groups, int human_groups, int min_humans)
         {
             // Renvoie un booléen qui nous indique s'il est pertinent de séparer en deux groupes
             // Deux conditions doivent être remplies pour tester le split : 
@@ -228,7 +229,7 @@ namespace DeepWerewolf
             //    }
             //}
 
-            return total_groups < human_groups && min_humans < tuile.monstres.number;
+            return total_groups < human_groups && min_humans < tuile.monstres.number && total_groups < max_groups;
             
         }
 
@@ -425,6 +426,7 @@ namespace DeepWerewolf
             int human_groups = 0;
             int monsters_groups = 0;
             int min_humans = 10000;
+            int max_groups = 2; //le nombre de groupes max qu'on autorise sur la map
 
             foreach (Tile t in tuiles)
             {
@@ -454,7 +456,7 @@ namespace DeepWerewolf
                     if (Tuile.monstres.isEnemy == enemy) //vrai si la tuile est du meme type que le type demandé (allie ou ennemi)
                     {
                         //result.AddRange(calculate_group_moves(Tuile, consider_split(Tuile)));
-                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile, monsters_groups, human_groups, min_humans));
+                        List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, consider_split(Tuile, monsters_groups, max_groups, human_groups, min_humans));
                         //List<List<int[]>> group_moves_list = calculate_group_moves(Tuile, true);
 
                         group_moves.Add(i, group_moves_list );
@@ -1237,7 +1239,7 @@ namespace DeepWerewolf
                 }
 
 
-                //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
+                //une fois qu'il n'y a plus qu'un groupe, on réduit la distance aux groupes qui sont bien plus petits que nous
                 if (n_gr_allies == 1)
                 {
                     total_dist = 0;
@@ -1299,6 +1301,7 @@ namespace DeepWerewolf
                 //une fois qu'il n'y a plus qu'un groupe, on réduit la distance à l'ennemi
                 if (n_gr_enemies == 1)
                 {
+                    
                     if (!global_distance_considered)
                     {
                         total_dist = 0;
@@ -1488,11 +1491,11 @@ namespace DeepWerewolf
                         return new double[3] { 0, -Tuile_Attaquee.enemies(), 0 };
                     }
 
-                    else if (Tuile_Attaquee.enemies() >= 1.5 * Tuile_Source.allies())
-                    {
-                        //on est trop peu nombreux, on se fait zigouiller
-                        return new double[3] { -Tuile_Source.allies(), 0, 0 };
-                    }
+                    //else if (Tuile_Attaquee.enemies() >= 1.5 * Tuile_Source.allies())
+                    //{
+                    //    //on est trop peu nombreux, on se fait zigouiller
+                    //    return new double[3] { -Tuile_Source.allies(), 0, 0 };
+                    //}
 
                     else
                     {
@@ -1611,11 +1614,11 @@ namespace DeepWerewolf
                         return new double[3] { -Tuile_Attaquee.allies(), 0, 0 };
                     }
 
-                    else if (Tuile_Attaquee.allies() >= 1.5 * Tuile_Source.enemies())
-                    {
-                        //on est assez nombreux, on les zigouille
-                        return new double[3] { 0, -Tuile_Source.enemies(), 0 };
-                    }
+                    //else if (Tuile_Attaquee.allies() >= 1.5 * Tuile_Source.enemies())
+                    //{
+                    //    //on est assez nombreux, on les zigouille
+                    //    return new double[3] { 0, -Tuile_Source.enemies(), 0 };
+                    //}
 
                     else
                     {
@@ -1748,11 +1751,11 @@ namespace DeepWerewolf
                         return new int[3] { 0, -Tuile_Attaquee.enemies(), 0 };
                     }
 
-                    else if (Tuile_Attaquee.enemies() >= 1.5 * Tuile_Source.allies())
-                    {
-                        //on est trop peu nombreux, on se fait zigouiller
-                        return new int[3] { -Tuile_Source.allies(), 0, 0 };
-                    }
+                    //else if (Tuile_Attaquee.enemies() >= 1.5 * Tuile_Source.allies())
+                    //{
+                    //    //on est trop peu nombreux, on se fait zigouiller
+                    //    return new int[3] { -Tuile_Source.allies(), 0, 0 };
+                    //}
 
                     else
                     {
@@ -1867,11 +1870,11 @@ namespace DeepWerewolf
                         return new int[3] { -Tuile_Attaquee.allies(), 0, 0 };
                     }
 
-                    else if (Tuile_Attaquee.allies() >= 1.5 * Tuile_Source.enemies())
-                    {
-                        //on est assez nombreux, on les zigouille
-                        return new int[3] { 0, -Tuile_Source.enemies(), 0 };
-                    }
+                    //else if (Tuile_Attaquee.allies() >= 1.5 * Tuile_Source.enemies())
+                    //{
+                    //    //on est assez nombreux, on les zigouille
+                    //    return new int[3] { 0, -Tuile_Source.enemies(), 0 };
+                    //}
 
                     else
                     {

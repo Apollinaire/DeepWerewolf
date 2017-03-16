@@ -38,7 +38,8 @@ namespace DeepWerewolf
             if (args.Length == 0)
             {
                 List<string> settings = File.ReadLines(pathToConfigFile).ToList();
-                name = settings[0] + DateTime.Now.Millisecond.ToString();
+                //name = settings[0] + DateTime.Now.Millisecond.ToString();
+                name = settings[0];
                 serverIP = IPAddress.Parse(settings[1]);
                 serverPort = int.Parse(settings[2]);
                 time_delay = 2;
@@ -47,7 +48,8 @@ namespace DeepWerewolf
             else
             {
                 time_delay = int.Parse(args[args.Length - 4]);
-                name = args[args.Length - 3] + DateTime.Now.Millisecond.ToString();
+                //name = args[args.Length - 3] + DateTime.Now.Millisecond.ToString();
+                name = args[args.Length - 3];
                 serverIP = IPAddress.Parse(args[args.Length - 2]);
                 serverPort = int.Parse(args[args.Length - 1]);
             }
@@ -446,6 +448,7 @@ namespace DeepWerewolf
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
             List<int[]> movements = calcul_meilleur_coup();
+
             //Thread.Sleep(time_delay*1000 - 500);
             send_MOV_frame(movements.Count, movements);
 
@@ -765,11 +768,11 @@ namespace DeepWerewolf
             
             //myGame.currentMap = new GameMap(5, 10);
             //myGame.currentMap.setTile(7, 0, 0, 1, false);
-            //myGame.currentMap.setTile(7, 1, 0, 3, false);
+            //myGame.currentMap.setTile(7, 1, 0, 2, false);
             //myGame.currentMap.setTile(9, 0, 2, 0, false);
             //myGame.currentMap.setTile(9, 2, 1, 0, false);
             //myGame.currentMap.setTile(9, 4, 2, 0, false);
-            //myGame.currentMap.setTile(4, 0, 0, 8, true);
+            //myGame.currentMap.setTile(4, 0, 0, 4, true);
             //myGame.currentMap.calculate_moves(false);
             //GameMap new_map = myGame.currentMap.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 4, 4, 3 } });
             ////Console.WriteLine("Allies en ({0}, {1}) sur currentMap : {2}\nAllies en ({0}, {1}) sur newMap : {3}", 4, 3, myGame.currentMap.getTile(4, 3).allies(), new_map.getTile(4, 3).allies());
@@ -779,8 +782,8 @@ namespace DeepWerewolf
             //GameMap new_map = currentMap2.interprete_moves(new List<int[]>() { new int[5] { 4, 3, 25, 4, 2 }, new int[5] {4, 1, 25, 4, 2 } });
             ////Console.WriteLine($"allies : {new_map.getTile(4, 2).allies()}");
             //Thread.Sleep(5000);
-            //double[] res = myGame.currentMap.esperance_attaque(myGame.currentMap.getTile(4, 3), myGame.currentMap.getTile(2, 2));
-            ////Console.WriteLine($"{res[0]} {res[1]}");
+            //int[] res = myGame.currentMap.resultat_attaque(myGame.currentMap.getTile(4, 0), myGame.currentMap.getTile(7, 1), 0.6);
+            //Console.WriteLine($"{res[0]} {res[1]}");
 
             //var result1 = myGame.currentMap.game_over();
             ////Console.WriteLine($"{result1[0]}  {result1[1]}");
