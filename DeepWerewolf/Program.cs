@@ -354,10 +354,10 @@ namespace DeepWerewolf
 
             //On envoie ensuite chaque mouvement
 
-            Console.Write("Envoyé : ");
+            //Console.Write("Envoyé : ");
             foreach (int[] move in movements)
             {
-                Console.Write("[ {0} {1} {2} {3} {4} ] ", move[0], move[1], move[2], move[3], move[4]);
+                //Console.Write("[ {0} {1} {2} {3} {4} ] ", move[0], move[1], move[2], move[3], move[4]);
                 byte X_start = (byte)move[0];
                 byte Y_start = (byte)move[1];
                 byte people = (byte)move[2];
@@ -508,8 +508,7 @@ namespace DeepWerewolf
             double[] tmp = new double[moves.Count];
             int i = 0;
 
-            #region Version multithread
-
+            
 
             while (i < moves.Count && sw.ElapsedMilliseconds < time_limit)
             {
@@ -560,12 +559,12 @@ namespace DeepWerewolf
             //Une fois qu'on a atteint la limite de temps, on arrête tous les threads
             foreach (Thread t in thread_list)
             {
-                //t.Join(500);
+                
                 try
                 {
                     if (t.IsAlive)
                     {
-                        Console.WriteLine("Thread avorté.");
+                        //Console.WriteLine("Thread avorté.");
                         t.Abort();
                     }
 
@@ -595,8 +594,6 @@ namespace DeepWerewolf
 
                 }
             }
-
-            #endregion Version multithread
 
             sw.Stop();
 
