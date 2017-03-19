@@ -38,7 +38,6 @@ namespace DeepWerewolf
             if (args.Length == 0)
             {
                 List<string> settings = File.ReadLines(pathToConfigFile).ToList();
-                //name = settings[0] + DateTime.Now.Millisecond.ToString();
                 name = settings[0];
                 serverIP = IPAddress.Parse(settings[1]);
                 serverPort = int.Parse(settings[2]);
@@ -47,8 +46,8 @@ namespace DeepWerewolf
 
             else
             {
+                //On utilise les paramètres passés en ligne de commande
                 time_delay = int.Parse(args[args.Length - 4]);
-                //name = args[args.Length - 3] + DateTime.Now.Millisecond.ToString();
                 name = args[args.Length - 3];
                 serverIP = IPAddress.Parse(args[args.Length - 2]);
                 serverPort = int.Parse(args[args.Length - 1]);
@@ -355,10 +354,10 @@ namespace DeepWerewolf
 
             //On envoie ensuite chaque mouvement
 
-            Console.Write("Envoyé : ");
+            //Console.Write("Envoyé : ");
             foreach (int[] move in movements)
             {
-                Console.Write("[ {0} {1} {2} {3} {4} ] ", move[0], move[1], move[2], move[3], move[4]);
+                //Console.Write("[ {0} {1} {2} {3} {4} ] ", move[0], move[1], move[2], move[3], move[4]);
                 byte X_start = (byte)move[0];
                 byte Y_start = (byte)move[1];
                 byte people = (byte)move[2];
@@ -447,11 +446,11 @@ namespace DeepWerewolf
 
             //Résumé : appelle la fonction calcul_meilleur_coup, 
             //et envoie l’ordre élaboré au serveur avec la fonction send_MOV_frame()
+
+
             List<int[]> movements = calcul_meilleur_coup();
-
-            //Thread.Sleep(time_delay*1000 - 500);
+            
             send_MOV_frame(movements.Count, movements);
-
 
         }
 
@@ -464,25 +463,30 @@ namespace DeepWerewolf
             //MAXIMUM[CalculMin(MapReprésentantLeCoup, profondeur - 1)].
             //L’objet List< int[] > à renvoyer est le coup qui réalise ce maximum
 
-            // On compte le nombre de groupes d'ennemis sur la map
-            int enemy_groups = 0;
-            for (int x = 0; x < currentMap.size_x; x++)
+            //On lance une stopwatch pour jouer dans les temps
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
+
+            // On compte le nombre de groupes sur la map
+            int groups = 0;
+            for (int x = 0; x < currentMap.size_y; x++)
             {
-                for (int y = 0; y < currentMap.size_y; y++)
+                for (int y = 0; y < currentMap.size_x; y++)
                 {
-                    if (currentMap.getTile(x, y).enemies() != 0)
+                    if (currentMap.getTile(x, y).monstres.number != 0)
                     {
-                        enemy_groups++;
+                        groups++;
                     }
                 }
             }
             int profondeur;
-            // On régle la profondeur selon le nombre d'ennemis présents dans la map
-            if (enemy_groups >= 6)
+            // On régle la profondeur selon le nombre de groupes présents dans la map
+            if (groups >= 8)
             {
                 profondeur = 0; 
             }
-            else if ( enemy_groups >= 4 && enemy_groups < 6)
+            else if ( groups >= 5)
             {
                 profondeur = 1;
             }
@@ -497,19 +501,14 @@ namespace DeepWerewolf
             double max = -100000.0;
             List<int[]> move_to_do = new List<int[]>();
 
-            //On lance une stopwatch pour jouer dans les temps
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            int time_limit = time_delay * 1000 - 500; //le temps qu'on se laisse pour jouer
+            
 
             
             List<Thread> thread_list = new List<Thread>();
             double[] tmp = new double[moves.Count];
             int i = 0;
 
-            #region Version multithread
-
-            //---- Version multi thread ------
+            
 
             while (i < moves.Count && sw.ElapsedMilliseconds < time_limit)
             {
@@ -560,12 +559,12 @@ namespace DeepWerewolf
             //Une fois qu'on a atteint la limite de temps, on arrête tous les threads
             foreach (Thread t in thread_list)
             {
-                //t.Join(500);
+                
                 try
                 {
                     if (t.IsAlive)
                     {
-                        Console.WriteLine("Thread avorté.");
+                        //Console.WriteLine("Thread avorté.");
                         t.Abort();
                     }
 
@@ -595,40 +594,6 @@ namespace DeepWerewolf
 
                 }
             }
-
-            //--------------------------------------------------
-            #endregion Version multithread
-
-            #region Version monothread
-            //----Version monothread
-
-            //for (i = 0; i < moves.Count; i++)
-            //{
-
-            //    List<int[]> move = new List<int[]>();
-
-            //    foreach (var action in moves[i])
-            //    {
-            //        move.Add(new int[5] { action[0], action[1], action[2], action[3], action[4] });
-            //    }
-
-            //    GameMap mapATester = currentMap.interprete_moves(move);
-            //    double temp = alpha;
-            //    alpha = Math.Max(alpha, calcul_Min(mapATester, profondeur - 1, alpha, beta));
-            //    if (alpha > temp)
-            //    {
-            //        if (alpha != -10000)
-            //        {
-            //            move_to_do = moves[i];
-            //        }
-            //    }
-            //}
-
-
-            //--------------------------
-            #endregion Version monothread
-
-
 
             sw.Stop();
 
@@ -674,7 +639,7 @@ namespace DeepWerewolf
             
             if (profondeur == 0)
             {
-                //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
+                
                 return MapATester.oracle(false); //false parce que c'est à nous de jouer
             }
             else
@@ -726,7 +691,7 @@ namespace DeepWerewolf
 
             if (profondeur == 0)
             {
-                //return MapATester.oracle(0.5, 1); // A CHANGER SELON LA NOUVELLE SIGNATURE DE ORACLE
+                
                 return MapATester.oracle(true); //true parce que c'est à l'ennemi de jouer dans calcul_min
             }
             else
@@ -857,7 +822,7 @@ namespace DeepWerewolf
             {
                 //on reçoit la trame UPD
                 myGame.receive_frame();
-                //Console.WriteLine("Favorabilite du plateau : {0}", myGame.currentMap.oracle());
+                
 
                 //on envoie une commande de mouvement
 
@@ -869,11 +834,6 @@ namespace DeepWerewolf
             }
 
             myGame.connectionSocket.Close();
-
-            //var moves = new List<int[]>();
-            //moves.Add(new int[5] { 4, 3, 3, 4, 1 });
-            //myGame.currentMap.interprete_moves(moves);
-            ////Console.WriteLine(myGame.currentMap.getTile(4, 1).enemies());
 
         }
     }
